@@ -63,11 +63,11 @@ export default function Sidebar({
   return (
     <aside className="w-full md:w-64 h-screen sticky top-0 flex flex-col bg-background md:border-r font-typewriter z-50">
       {/* Header */}
-      <div className="p-4 flex items-center gap-4 shrink-0 border-b bg-muted/10">
+      <div className="p-4 flex items-center gap-4 shrink-0 bg-muted/5 border-b">
         <img
           src={inklineIcon}
           alt="InkLine Logo"
-          className="h-10 w-10 rounded-sm border border-muted"
+          className="h-10 w-10 rounded-sm"
         />
         <h2 className="text-xl font-bold text-foreground tracking-wide">
           InkLine
