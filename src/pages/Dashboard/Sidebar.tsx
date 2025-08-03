@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Note } from "@/types/Notes";
 import { isToday, isYesterday } from "date-fns";
 import { Progress } from "@/components/ui/progress";
-import inklineIcon from "@/assets/inkline.png";
+import inklineIcon from "@/assets/InkLine.png";
 
 type SidebarProps = {
   notes: Note[];
