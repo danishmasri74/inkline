@@ -4,7 +4,6 @@ import { Note } from "@/types/Notes";
 import { isToday, isYesterday } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import inklineIcon from "@/assets/InkLine.png";
-import { Link } from "react-router-dom";
 
 type SidebarProps = {
   notes: Note[];
@@ -62,16 +61,14 @@ export default function Sidebar({
   );
 
   return (
-    <aside className="w-full md:w-64 h-screen sticky top-0 flex flex-col bg-background md:border-r font-typewriter z-50">
+    <aside className="w-full md:w-64 min-h-[100dvh] sticky top-0 flex flex-col bg-background md:border-r font-typewriter z-50">
       {/* Header */}
       <div className="p-4 flex items-center gap-4 shrink-0 bg-muted/5 border-b">
-        <Link to="/" className="shrink-0">
-          <img
-            src={inklineIcon}
-            alt="InkLine Logo"
-            className="h-10 w-10 rounded-sm hover:opacity-80 transition-opacity"
-          />
-        </Link>
+        <img
+          src={inklineIcon}
+          alt="InkLine Logo"
+          className="h-10 w-10 rounded-sm"
+        />
         <div className="flex flex-col">
           <h2 className="text-xl font-bold text-foreground tracking-wide">
             InkLine
