@@ -63,15 +63,19 @@ export default function Sidebar({
   return (
     <aside className="w-full md:w-64 h-screen sticky top-0 flex flex-col bg-background md:border-r font-typewriter z-50">
       {/* Header */}
-      <div className="p-4 flex items-center gap-3 shrink-0">
+      <div className="p-4 flex items-center gap-4 shrink-0 border-b bg-muted/20">
         <img
           src={inklineIcon}
           alt="InkLine Logo"
-          className="h-6 w-6 rounded-sm"
+          className="h-10 w-10 rounded shadow-md border"
         />
-        <h2 className="text-lg tracking-wide font-semibold text-foreground">
-          InkLine
-        </h2>
+        <div className="flex flex-col">
+          <h2 className="text-xl font-bold text-foreground tracking-wide leading-tight">
+            InkLine
+          </h2>
+          {/* Optional: Add a small tagline */}
+          {/* <span className="text-xs text-muted-foreground">Capture. Reflect. Write.</span> */}
+        </div>
         {onClose && (
           <div className="ml-auto md:hidden">
             <Button
