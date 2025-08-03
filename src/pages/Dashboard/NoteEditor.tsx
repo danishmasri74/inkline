@@ -1,26 +1,26 @@
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { useEffect, useState } from "react";
-import { Note } from "@/types/Notes";
-import { supabase } from "@/lib/supabaseClient";
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { useEffect, useState } from "react"
+import { Note } from "@/types/Notes"
+import { supabase } from "@/lib/supabaseClient"
 
 type NoteEditorProps = {
-  note: Note | null;
-  onUpdate: (updatedNote: Note) => void;
-};
+  note: Note | null
+  onUpdate: (updatedNote: Note) => void
+}
 
-const MAX_BODY_LENGTH = 4096;
+const MAX_BODY_LENGTH = 4096
 
 export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [title, setTitle] = useState("")
+  const [body, setBody] = useState("")
 
   useEffect(() => {
     if (note) {
-      setTitle(note.title);
-      setBody(note.body);
+      setTitle(note.title)
+      setBody(note.body)
     }
-  }, [note]);
+  }, [note])
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -33,29 +33,27 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
           .single()
           .then(({ data, error }) => {
             if (error) {
-              console.error("Auto-save failed:", error.message);
+              console.error("Auto-save failed:", error.message)
             } else if (data) {
-              onUpdate(data);
+              onUpdate(data)
             }
-          });
+          })
       }
-    }, 1000);
+    }, 1000)
 
-    return () => clearTimeout(timeout);
-  }, [title, body, note]);
+    return () => clearTimeout(timeout)
+  }, [title, body, note])
 
-  if (!note)
-    return (
-      <p className="text-muted-foreground italic">Select a note to view/edit</p>
-    );
+  if (!note) return <p className="text-muted-foreground italic">Select a note to view/edit</p>
 
   return (
     <div
-      className="bg-[#fdfaf6] text-card-foreground rounded-md border border-[#e0ddd5] font-typewriter leading-relaxed tracking-wide prose max-w-none p-8 min-h-[75vh]"
+      className="bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide prose max-w-none p-8 min-h-[75vh] md:shadow-md"
       style={{
         fontSize: "16px",
         lineHeight: "1.8",
         letterSpacing: "0.02em",
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
         minHeight: "75vh",
       }}
     >
@@ -70,7 +68,7 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         value={body}
         onChange={(e) => {
           if (e.target.value.length <= MAX_BODY_LENGTH) {
-            setBody(e.target.value);
+            setBody(e.target.value)
           }
         }}
         rows={20}
@@ -82,5 +80,5 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         {body.length} / {MAX_BODY_LENGTH}
       </div>
     </div>
-  );
+  )
 }
