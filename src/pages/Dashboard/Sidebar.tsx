@@ -69,9 +69,14 @@ export default function Sidebar({
           alt="InkLine Logo"
           className="h-10 w-10 rounded-sm"
         />
-        <h2 className="text-xl font-bold text-foreground tracking-wide">
-          InkLine
-        </h2>
+        <div className="flex flex-col">
+          <h2 className="text-xl font-bold text-foreground tracking-wide">
+            InkLine
+          </h2>
+          <p className="text-xs text-muted-foreground leading-tight">
+            No fuss. Just notes.
+          </p>
+        </div>
         {onClose && (
           <div className="ml-auto md:hidden">
             <Button
