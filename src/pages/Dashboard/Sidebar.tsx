@@ -13,6 +13,7 @@ type SidebarProps = {
   loading: boolean;
   userEmail: string;
   onClose?: () => void;
+  onDeselect?: () => void;
 };
 
 const getInitial = (email: string) => email?.charAt(0)?.toUpperCase() ?? "?";
@@ -25,6 +26,7 @@ export default function Sidebar({
   loading,
   userEmail,
   onClose,
+  onDeselect,
 }: SidebarProps) {
   const todayNotes = notes.filter((n) => isToday(new Date(n.updated_at)));
   const yesterdayNotes = notes.filter((n) =>
@@ -62,8 +64,11 @@ export default function Sidebar({
 
   return (
     <aside className="w-full md:w-64 min-h-[100dvh] sticky top-0 flex flex-col bg-background md:border-r font-typewriter z-50">
-      {/* Header */}
-      <div className="p-4 flex items-center gap-4 shrink-0 bg-muted/5 border-b">
+      {/* App Icon & Title as clickable button */}
+      <button
+        className="p-4 flex items-center gap-4 shrink-0 bg-muted/5 border-b w-full text-left hover:bg-muted/10 transition"
+        onClick={onDeselect}
+      >
         <img
           src={inklineIcon}
           alt="InkLine Logo"
@@ -82,7 +87,10 @@ export default function Sidebar({
             <Button
               size="icon"
               variant="ghost"
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               aria-label="Close sidebar"
               className="text-muted-foreground hover:text-foreground"
             >
@@ -103,7 +111,7 @@ export default function Sidebar({
             </Button>
           </div>
         )}
-      </div>
+      </button>
 
       {/* Scrollable content */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -124,7 +132,7 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Progress */}
+        {/* Progress bar */}
         <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between shrink-0">
           <span>Notes</span>
           <span>
@@ -136,7 +144,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Minimal Footer with logout under email */}
+      {/* Footer with logout */}
       <div className="border-t px-4 py-3 shrink-0 flex items-center">
         <div className="flex items-center gap-3 truncate w-full">
           <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground">

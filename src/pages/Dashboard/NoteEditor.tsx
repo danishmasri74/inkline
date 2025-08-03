@@ -79,7 +79,7 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
-        className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
+        className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground"
       />
 
       <Textarea
@@ -91,9 +91,9 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         }}
         rows={20}
         placeholder="Start typing your note..."
-        className="resize-none bg-transparent border-none p-0 focus:outline-none focus:ring-0 placeholder:text-muted-foreground font-typewriter text-base"
+        className="resize-none bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground font-typewriter text-base"
       />
-
+      
       <div className="text-right text-sm text-muted-foreground mt-2">
         {body.length} / {MAX_BODY_LENGTH}
       </div>

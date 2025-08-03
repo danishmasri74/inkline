@@ -8,12 +8,19 @@ import Header from "./Header";
 import NoteEditor from "./NoteEditor";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NotesIndex from "./NotesIndex";
 
 export default function NotesPage({ session }: { session: Session }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>(
+    []
+  );
+  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(
+    () => () => {}
+  );
 
   const userId = session.user.id;
   const noteLimit = 100;
@@ -57,18 +64,51 @@ export default function NotesPage({ session }: { session: Session }) {
   };
 
   const handleDeleteNote = async () => {
-    if (!selectedNoteId) return;
+    const idsToDelete = selectedNoteId
+      ? [selectedNoteId]
+      : selectedTableNoteIds;
+
+    if (idsToDelete.length === 0) return;
 
     const { error } = await supabase
       .from("notes")
       .delete()
-      .eq("id", selectedNoteId)
+      .in("id", idsToDelete)
       .eq("user_id", userId);
 
-    if (error) return console.error("Error deleting note:", error.message);
+    if (error) return console.error("Error deleting note(s):", error.message);
 
-    setNotes((prev) => prev.filter((note) => note.id !== selectedNoteId));
-    setSelectedNoteId(null);
+    setNotes((prev) => prev.filter((note) => !idsToDelete.includes(note.id)));
+
+    if (idsToDelete.includes(selectedNoteId!)) {
+      setSelectedNoteId(null);
+    }
+
+    setSelectedTableNoteIds([]);
+
+    // 👇 Refresh the table notes list
+    refetchTableNotes();
+  };
+
+  const handleDeleteSelectedNotes = async () => {
+    if (selectedTableNoteIds.length === 0) return;
+
+    const { error } = await supabase
+      .from("notes")
+      .delete()
+      .in("id", selectedTableNoteIds)
+      .eq("user_id", userId);
+
+    if (error)
+      return console.error("Error deleting selected notes:", error.message);
+
+    setNotes((prev) =>
+      prev.filter((note) => !selectedTableNoteIds.includes(note.id))
+    );
+    setSelectedTableNoteIds([]);
+
+    // 👇 Refresh the table notes list
+    refetchTableNotes();
   };
 
   const handleLogout = async () => {
@@ -121,6 +161,7 @@ export default function NotesPage({ session }: { session: Session }) {
           onLogout={handleLogout}
           loading={loading}
           userEmail={session.user.email!}
+          onDeselect={() => setSelectedNoteId(null)}
         />
       </div>
 
@@ -138,16 +179,29 @@ export default function NotesPage({ session }: { session: Session }) {
 
         <Header
           onNewNote={handleNewNote}
-          onDeleteNote={handleDeleteNote}
-          isDeleteDisabled={!selectedNoteId}
+          onDelete={selectedNote ? handleDeleteNote : handleDeleteSelectedNotes}
+          isDeleteDisabled={
+            selectedNote ? !selectedNoteId : selectedTableNoteIds.length === 0
+          }
           isNewDisabled={notes.length >= noteLimit}
+          noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
         />
 
-        <div className="flex justify-center">
-          <div className="w-full max-w-prose">
-            <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
+        {selectedNote ? (
+          <div className="flex justify-center">
+            <div className="w-full max-w-prose">
+              <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="w-full">
+            <NotesIndex
+              selectedIds={selectedTableNoteIds}
+              setSelectedIds={setSelectedTableNoteIds}
+              notes={notes}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
