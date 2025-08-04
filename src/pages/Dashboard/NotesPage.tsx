@@ -185,7 +185,7 @@ export default function NotesPage({ session }: { session: Session }) {
 
         <Routes>
           <Route
-            path="/"
+            index
             element={
               <NotesIndex
                 selectedIds={selectedTableNoteIds}
