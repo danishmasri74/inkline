@@ -37,7 +37,8 @@ export default function NotesPage({ session }: { session: Session }) {
         console.error("Error fetching notes:", error.message);
       } else {
         setNotes(data || []);
-        if (data && data.length > 0) setSelectedNoteId(data[0].id);
+        // Don't auto-select a note here
+        setSelectedNoteId(null);
       }
       setLoading(false);
     };
