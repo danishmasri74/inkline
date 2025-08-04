@@ -49,7 +49,7 @@ export default function App() {
       />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Protected Route */}
+      {/* Protected Routes */}
       <Route
         path="/dashboard/*"
         element={
@@ -61,7 +61,7 @@ export default function App() {
         }
       />
 
-      {/* Catch All */}
+      {/* Root & Catch-All */}
       <Route
         path="/"
         element={
