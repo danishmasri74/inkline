@@ -2,6 +2,11 @@ import { Note } from "@/types/Notes";
 import { useNavigate } from "react-router-dom";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 type SortKey = "title" | "created_at" | "updated_at";
 type SortDirection = "asc" | "desc";
@@ -134,7 +139,7 @@ export default function NotesIndex({
           />
         </div>
 
-        <div className="overflow-x-auto border border-border rounded-md shadow-sm">
+        <div className="overflow-x-auto border border-border rounded-md">
           <table className="min-w-full table-auto text-xs text-left">
             <thead className="bg-muted/40 text-muted-foreground uppercase tracking-wide border-b border-border">
               <tr>
@@ -161,6 +166,11 @@ export default function NotesIndex({
             <tbody>
               {filteredSortedNotes.map((note) => {
                 const isSelected = selectedIds.includes(note.id);
+                const previewText =
+                  note.body?.length > 100
+                    ? `${note.body.slice(0, 100).trim()}…`
+                    : note.body || "—";
+
                 return (
                   <tr
                     key={note.id}
@@ -168,7 +178,7 @@ export default function NotesIndex({
                     className={`cursor-pointer border-b border-border transition-all duration-150 ${
                       isSelected
                         ? "bg-accent/20 border-l-4 border-accent"
-                        : "hover:bg-muted/20 hover:shadow-sm"
+                        : "hover:bg-muted/20"
                     }`}
                   >
                     <td
@@ -185,13 +195,17 @@ export default function NotesIndex({
                     <td className="px-3 py-2 font-medium text-foreground truncate max-w-[160px]">
                       {note.title || "Untitled"}
                     </td>
-                    <td
-                      className="px-3 py-2 text-muted-foreground max-w-[280px] truncate"
-                      title={note.body}
-                    >
-                      {note.body?.length > 100
-                        ? `${note.body.slice(0, 100).trim()}…`
-                        : note.body || "—"}
+                    <td className="px-3 py-2 text-muted-foreground max-w-[280px] truncate">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>{previewText}</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs whitespace-pre-wrap">
+                            {note.body || "—"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     </td>
                     <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                       {new Date(note.created_at).toLocaleDateString()}
