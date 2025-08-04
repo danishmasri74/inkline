@@ -185,6 +185,8 @@ export default function NotesPage({ session }: { session: Session }) {
           }
           isNewDisabled={notes.length >= noteLimit}
           noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
+          onDeselect={() => setSelectedNoteId(null)}
+          isIndexPage={!selectedNoteId}
         />
 
         {selectedNote ? (

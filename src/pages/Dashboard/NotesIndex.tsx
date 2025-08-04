@@ -27,6 +27,7 @@ export default function NotesIndex({
   notes,
   selectedIds,
   setSelectedIds,
+  onSortConfigChange,
 }: NotesIndexProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortConfig, setSortConfig] = useState<{
@@ -55,7 +56,8 @@ export default function NotesIndex({
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sortConfig));
-  }, [sortConfig]);
+    onSortConfigChange?.(sortConfig);
+  }, [sortConfig, onSortConfigChange]);
 
   const handleSort = (key: SortKey) => {
     setSortConfig((prev) => {
@@ -65,7 +67,7 @@ export default function NotesIndex({
     });
   };
 
-  const filteredSortedNotes = [...notes]
+  const filteredSortedNotes = notes
     .filter((note) =>
       note.title?.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -90,11 +92,9 @@ export default function NotesIndex({
     filteredSortedNotes.every((note) => selectedIds.includes(note.id));
 
   const toggleSelectAll = () => {
-    if (isAllSelected) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredSortedNotes.map((note) => note.id));
-    }
+    setSelectedIds(
+      isAllSelected ? [] : filteredSortedNotes.map((note) => note.id)
+    );
   };
 
   const toggleSelect = (id: string) => {
@@ -135,7 +135,7 @@ export default function NotesIndex({
             placeholder="Search by title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground w-full sm:w-64 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
 
@@ -208,10 +208,14 @@ export default function NotesIndex({
                       </Tooltip>
                     </td>
                     <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                      {new Date(note.created_at).toLocaleDateString()}
+                      {note.created_at
+                        ? new Date(note.created_at).toLocaleDateString()
+                        : "—"}
                     </td>
                     <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                      {new Date(note.updated_at).toLocaleString()}
+                      {note.updated_at
+                        ? new Date(note.updated_at).toLocaleString()
+                        : "—"}
                     </td>
                   </tr>
                 );
