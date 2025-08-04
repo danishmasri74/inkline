@@ -2,6 +2,8 @@ import { Note } from "@/types/Notes";
 import { useNavigate } from "react-router-dom";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import JSZip from "jszip";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipTrigger,
@@ -103,6 +105,33 @@ export default function NotesIndex({
     );
   };
 
+  const handleBulkDownload = async () => {
+    const selectedNotes = notes.filter((note) => selectedIds.includes(note.id));
+
+    if (selectedNotes.length === 0) return;
+
+    const zip = new JSZip();
+
+    selectedNotes.forEach((note) => {
+      const filename = `${note.title?.trim() || "Untitled"}.txt`;
+      const content = `Title: ${note.title || "Untitled"}\n\n${
+        note.body || ""
+      }`;
+      zip.file(filename, content);
+    });
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "notes.zip";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const renderHeader = (label: string, key: SortKey) => {
     const isActive = sortConfig.key === key;
     const icon =
@@ -130,13 +159,24 @@ export default function NotesIndex({
           <h1 className="text-2xl font-bold tracking-wide text-foreground">
             📜 All Notes
           </h1>
-          <input
-            type="text"
-            placeholder="Search by title..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground w-full sm:w-64 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
+
+          <div className="flex gap-2 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Search by title..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground w-full sm:w-64 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+
+            <Button
+              variant="outline"
+              onClick={handleBulkDownload}
+              disabled={selectedIds.length === 0}
+            >
+              Download Selected
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto border border-border rounded-md">

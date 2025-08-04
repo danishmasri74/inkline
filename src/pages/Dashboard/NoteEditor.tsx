@@ -1,5 +1,6 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Note } from "@/types/Notes";
 import { supabase } from "@/lib/supabaseClient";
@@ -58,6 +59,22 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const downloadAsTxt = () => {
+    if (!note) return;
+
+    const content = `Title: ${title}\n\n${body}`;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${title || "note"}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (!note) {
     return (
       <p className="text-muted-foreground italic">Select a note to view/edit</p>
@@ -93,9 +110,19 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         placeholder="Start typing your note..."
         className="resize-none bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground font-typewriter text-base"
       />
-      
-      <div className="text-right text-sm text-muted-foreground mt-2">
-        {body.length} / {MAX_BODY_LENGTH}
+
+      <div className="flex justify-between items-center mt-4">
+        <div className="text-sm text-muted-foreground">
+          {body.length} / {MAX_BODY_LENGTH}
+        </div>
+
+        <Button
+          variant="outline"
+          onClick={downloadAsTxt}
+          disabled={!note || body.trim() === ""}
+        >
+          Download as .txt
+        </Button>
       </div>
 
       {showScrollTop && (
