@@ -174,7 +174,7 @@ export default function NotesIndex({
                 return (
                   <tr
                     key={note.id}
-                    onClick={() => navigate(`/notes/${note.id}`)}
+                    onClick={() => navigate(`/dashboard/${note.id}`)}
                     className={`cursor-pointer border-b border-border transition-all duration-150 ${
                       isSelected
                         ? "bg-accent/20 border-l-4 border-accent"
