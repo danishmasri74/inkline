@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
 import { Note } from "@/types/Notes";
@@ -13,7 +14,6 @@ import NotesIndex from "./NotesIndex";
 export default function NotesPage({ session }: { session: Session }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>(
     []
@@ -21,6 +21,9 @@ export default function NotesPage({ session }: { session: Session }) {
   const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(
     () => () => {}
   );
+
+  const { noteId } = useParams<{ noteId?: string }>();
+  const navigate = useNavigate();
 
   const userId = session.user.id;
   const noteLimit = 100;
@@ -37,8 +40,6 @@ export default function NotesPage({ session }: { session: Session }) {
         console.error("Error fetching notes:", error.message);
       } else {
         setNotes(data || []);
-        // Don't auto-select a note here
-        setSelectedNoteId(null);
       }
       setLoading(false);
     };
@@ -61,13 +62,11 @@ export default function NotesPage({ session }: { session: Session }) {
     if (error) return console.error("Error creating note:", error.message);
 
     setNotes((prev) => [data, ...prev]);
-    setSelectedNoteId(data.id);
+    navigate(`/notes/${data.id}`);
   };
 
   const handleDeleteNote = async () => {
-    const idsToDelete = selectedNoteId
-      ? [selectedNoteId]
-      : selectedTableNoteIds;
+    const idsToDelete = noteId ? [noteId] : selectedTableNoteIds;
 
     if (idsToDelete.length === 0) return;
 
@@ -81,13 +80,12 @@ export default function NotesPage({ session }: { session: Session }) {
 
     setNotes((prev) => prev.filter((note) => !idsToDelete.includes(note.id)));
 
-    if (idsToDelete.includes(selectedNoteId!)) {
-      setSelectedNoteId(null);
+    if (idsToDelete.includes(noteId!)) {
+      navigate("/notes");
     }
 
     setSelectedTableNoteIds([]);
 
-    // 👇 Refresh the table notes list
     refetchTableNotes();
   };
 
@@ -108,7 +106,6 @@ export default function NotesPage({ session }: { session: Session }) {
     );
     setSelectedTableNoteIds([]);
 
-    // 👇 Refresh the table notes list
     refetchTableNotes();
   };
 
@@ -122,26 +119,23 @@ export default function NotesPage({ session }: { session: Session }) {
     );
   };
 
-  const selectedNote = notes.find((note) => note.id === selectedNoteId) || null;
+  const selectedNote = notes.find((note) => note.id === noteId) || null;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileSidebarOpen(false)}
           />
-
-          {/* Sliding panel */}
           <div className="relative w-72 max-w-[80vw] h-full bg-background shadow-lg transition-transform duration-300 ease-in-out transform translate-x-0">
             <Sidebar
               notes={notes}
-              selectedId={selectedNoteId}
+              selectedId={noteId || null}
               onSelect={(id) => {
-                setSelectedNoteId(id);
+                navigate(`/notes/${id}`);
                 setMobileSidebarOpen(false);
               }}
               onLogout={handleLogout}
@@ -157,17 +151,17 @@ export default function NotesPage({ session }: { session: Session }) {
       <div className="hidden md:block">
         <Sidebar
           notes={notes}
-          selectedId={selectedNoteId}
-          onSelect={setSelectedNoteId}
+          selectedId={noteId || null}
+          onSelect={(id) => navigate(`/notes/${id}`)}
           onLogout={handleLogout}
           loading={loading}
           userEmail={session.user.email!}
-          onDeselect={() => setSelectedNoteId(null)}
+          onDeselect={() => navigate("/notes")}
         />
       </div>
 
       <div className="flex-1 p-4 md:p-6">
-        {/* Mobile header with menu toggle */}
+        {/* Mobile Header */}
         <div className="md:hidden mb-4 flex justify-between items-center">
           <Button
             variant="ghost"
@@ -182,7 +176,7 @@ export default function NotesPage({ session }: { session: Session }) {
           onNewNote={handleNewNote}
           onDelete={selectedNote ? handleDeleteNote : handleDeleteSelectedNotes}
           isDeleteDisabled={
-            selectedNote ? !selectedNoteId : selectedTableNoteIds.length === 0
+            selectedNote ? !noteId : selectedTableNoteIds.length === 0
           }
           isNewDisabled={notes.length >= noteLimit}
           noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
@@ -190,7 +184,10 @@ export default function NotesPage({ session }: { session: Session }) {
 
         {selectedNote ? (
           <div className="flex justify-center">
-            <div className="w-full max-w-prose">
+            <div className="w-full max-w-prose space-y-4">
+              <Button variant="ghost" onClick={() => navigate("/notes")}>
+                ← Back to All Notes
+              </Button>
               <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
             </div>
           </div>
