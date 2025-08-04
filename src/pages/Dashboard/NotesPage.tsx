@@ -119,7 +119,8 @@ export default function NotesPage({ session }: { session: Session }) {
     );
   };
 
-  const selectedNote = notes.find((note) => note.id === noteId) || null;
+  const selectedNote =
+    notes.length > 0 ? notes.find((note) => note.id === noteId) || null : null;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -196,7 +197,9 @@ export default function NotesPage({ session }: { session: Session }) {
           <Route
             path=":noteId"
             element={
-              selectedNote ? (
+              loading ? (
+                <div>Loading...</div>
+              ) : selectedNote ? (
                 <div className="flex justify-center">
                   <div className="w-full max-w-prose space-y-4">
                     <Button variant="ghost" onClick={() => navigate(basePath)}>
