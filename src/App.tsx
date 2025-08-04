@@ -51,7 +51,7 @@ export default function App() {
 
       {/* Protected Route */}
       <Route
-        path="/dashboard/:noteId?"
+        path="/dashboard"
         element={
           session ? (
             <NotesPage session={session} />
