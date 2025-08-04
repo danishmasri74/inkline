@@ -31,6 +31,7 @@ export default function NotesPage({ session }: { session: Session }) {
 
   useEffect(() => {
     const fetchNotes = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from("notes")
         .select("*")
@@ -119,8 +120,7 @@ export default function NotesPage({ session }: { session: Session }) {
     );
   };
 
-  const selectedNote =
-    notes.length > 0 ? notes.find((note) => note.id === noteId) || null : null;
+  const selectedNote = notes.find((note) => note.id === noteId);
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -185,7 +185,7 @@ export default function NotesPage({ session }: { session: Session }) {
 
         <Routes>
           <Route
-            index
+            path="/"
             element={
               <NotesIndex
                 selectedIds={selectedTableNoteIds}
@@ -211,8 +211,10 @@ export default function NotesPage({ session }: { session: Session }) {
                     />
                   </div>
                 </div>
-              ) : (
+              ) : notes.length > 0 ? (
                 <div>Note not found</div>
+              ) : (
+                <div>Loading...</div>
               )
             }
           />
