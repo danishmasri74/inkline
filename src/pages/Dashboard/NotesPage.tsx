@@ -203,30 +203,31 @@ export default function NotesPage({ session }: { session: Session }) {
 
             {/* Floating line navigation buttons (visible only on desktop) */}
             <div
-              className="fixed z-30 hidden md:flex flex-row items-center gap-3 p-2 bg-[#f3efe2] border border-[#333] rounded-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"
+              className="fixed z-40 hidden md:flex flex-row gap-2 p-2 border border-neutral-300 rounded-md bg-[#f6f4ed] shadow-md"
               style={{
                 bottom: "5rem",
                 right: "2rem",
               }}
             >
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-11 h-11 font-[Courier_New] text-xl border border-[#222] bg-[#fffef8] text-[#111] hover:bg-[#f0f0e8] active:translate-y-[1px] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] transition-all rounded-sm"
+                className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
               >
                 ←
               </Button>
+
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusNextLine()}
                 disabled={
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
-                className="w-11 h-11 font-[Courier_New] text-xl border border-[#222] bg-[#fffef8] text-[#111] hover:bg-[#f0f0e8] active:translate-y-[1px] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] transition-all rounded-sm"
+                className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
               >
                 →
               </Button>
