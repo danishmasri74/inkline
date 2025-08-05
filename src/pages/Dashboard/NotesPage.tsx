@@ -215,7 +215,7 @@ export default function NotesPage({ session }: { session: Session }) {
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-9 h-9 text-lg border border-[#b9a88e] rounded shadow-inner bg-[#f5ecd8] hover:bg-[#f0e4c3]"
+                className="w-10 h-10 text-xl font-serif border border-[#6e6253] rounded-sm bg-[#f4f0e6] text-[#2c2c2c] shadow-[inset_0_2px_2px_rgba(0,0,0,0.15)] hover:bg-[#eae4d9] active:translate-y-[1px] active:shadow-inner transition-all"
               >
                 ←
               </Button>
@@ -227,7 +227,7 @@ export default function NotesPage({ session }: { session: Session }) {
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
-                className="w-9 h-9 text-lg border border-[#b9a88e] rounded shadow-inner bg-[#f5ecd8] hover:bg-[#f0e4c3]"
+                className="w-10 h-10 text-xl font-serif border border-[#6e6253] rounded-sm bg-[#f4f0e6] text-[#2c2c2c] shadow-[inset_0_2px_2px_rgba(0,0,0,0.15)] hover:bg-[#eae4d9] active:translate-y-[1px] active:shadow-inner transition-all"
               >
                 →
               </Button>
