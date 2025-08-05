@@ -1,7 +1,7 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Note } from "@/types/Notes";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -16,11 +16,14 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [currentLine, setCurrentLine] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (note) {
       setTitle(note.title);
       setBody(note.body);
+      setCurrentLine(0);
     }
   }, [note]);
 
@@ -75,6 +78,21 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     URL.revokeObjectURL(url);
   };
 
+  const focusLine = (lineIndex: number) => {
+    if (!textareaRef.current) return;
+
+    const lines = body.split("\n");
+    const clampedIndex = Math.max(0, Math.min(lineIndex, lines.length - 1));
+    const start = lines
+      .slice(0, clampedIndex)
+      .reduce((acc, line) => acc + line.length + 1, 0);
+    const end = start + lines[clampedIndex].length;
+
+    textareaRef.current.focus();
+    textareaRef.current.setSelectionRange(start, end);
+    setCurrentLine(clampedIndex);
+  };
+
   if (!note) {
     return (
       <p className="text-muted-foreground italic">Select a note to view/edit</p>
@@ -101,7 +119,31 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground"
       />
 
+      {/* Line navigation buttons */}
+      <div className="flex gap-2 mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => focusLine(currentLine - 1)}
+          disabled={currentLine === 0}
+        >
+          &lt;
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => focusLine(currentLine + 1)}
+          disabled={currentLine >= body.split("\n").length - 1}
+        >
+          &gt;
+        </Button>
+        <span className="text-sm text-muted-foreground self-center">
+          Line {currentLine + 1} of {body.split("\n").length}
+        </span>
+      </div>
+
       <Textarea
+        ref={textareaRef}
         value={body}
         onChange={(e) => {
           if (e.target.value.length <= MAX_BODY_LENGTH) {
