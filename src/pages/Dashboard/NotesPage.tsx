@@ -201,9 +201,9 @@ export default function NotesPage({ session }: { session: Session }) {
               </div>
             </div>
 
-            {/* Floating line navigation buttons */}
+            {/* Floating line navigation buttons (hidden on mobile) */}
             <div
-              className="fixed z-50 flex gap-3 px-4 py-2 bg-background shadow-md border border-border rounded-full"
+              className="fixed z-50 gap-3 px-4 py-2 bg-background shadow-md border border-border rounded-full hidden md:flex"
               style={{
                 bottom: "1.5rem",
                 left: "50%",
