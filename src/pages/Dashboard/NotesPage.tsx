@@ -202,21 +202,32 @@ export default function NotesPage({ session }: { session: Session }) {
             </div>
 
             {/* Floating line navigation buttons */}
-            <div className="fixed bottom-6 left-6 z-50 flex gap-2">
+            <div
+              className="fixed z-50 flex gap-3 px-4 py-2 bg-background shadow-md border border-border rounded-full"
+              style={{
+                bottom: "1.5rem",
+                left: "50%",
+                transform: "translateX(-50%)",
+              }}
+            >
               <Button
                 variant="secondary"
+                size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
+                className="w-8 h-8"
               >
                 &lt;
               </Button>
               <Button
                 variant="secondary"
+                size="icon"
                 onClick={() => noteEditorRef.current?.focusNextLine()}
                 disabled={
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
+                className="w-8 h-8"
               >
                 &gt;
               </Button>

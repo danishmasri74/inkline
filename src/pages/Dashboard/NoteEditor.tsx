@@ -130,28 +130,6 @@ const NoteEditor = forwardRef(function NoteEditor(
         className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground"
       />
 
-      <div className="flex gap-2 mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => focusLine(currentLine - 1)}
-          disabled={currentLine === 0}
-        >
-          &lt;
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => focusLine(currentLine + 1)}
-          disabled={currentLine >= body.split("\n").length - 1}
-        >
-          &gt;
-        </Button>
-        <span className="text-sm text-muted-foreground self-center">
-          Line {currentLine + 1} of {body.split("\n").length}
-        </span>
-      </div>
-
       <Textarea
         ref={textareaRef}
         value={body}
