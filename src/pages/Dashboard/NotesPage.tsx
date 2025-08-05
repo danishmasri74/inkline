@@ -203,10 +203,10 @@ export default function NotesPage({ session }: { session: Session }) {
 
             {/* Floating line navigation buttons (visible only on desktop) */}
             <div
-              className="fixed z-50 hidden md:flex flex-col items-center gap-2 p-2 bg-white border border-neutral-200 rounded-lg shadow-md"
+              className="fixed z-50 hidden md:flex flex-row items-center gap-2 p-2 bg-[#f5f5dc] border border-neutral-300 rounded-md shadow-inner"
               style={{
-                bottom: "1.5rem",
-                right: "1.5rem",
+                bottom: "5rem", // more space to avoid scroll-to-top button
+                right: "2rem",
               }}
             >
               <Button
@@ -214,7 +214,7 @@ export default function NotesPage({ session }: { session: Session }) {
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-9 h-9 text-base border border-neutral-300 rounded-md bg-neutral-50 text-neutral-700 hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
+                className="w-10 h-10 font-mono text-xl border border-black bg-white text-black hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
               >
                 ←
               </Button>
@@ -226,7 +226,7 @@ export default function NotesPage({ session }: { session: Session }) {
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
-                className="w-9 h-9 text-base border border-neutral-300 rounded-md bg-neutral-50 text-neutral-700 hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
+                className="w-10 h-10 font-mono text-xl border border-black bg-white text-black hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
               >
                 →
               </Button>
