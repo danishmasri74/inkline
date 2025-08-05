@@ -203,7 +203,7 @@ export default function NotesPage({ session }: { session: Session }) {
 
             {/* Floating line navigation buttons (visible only on desktop) */}
             <div
-              className="fixed z-50 hidden md:flex items-center gap-3 px-6 py-3 bg-[#fdf6e3] border border-[#d8cbb3] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.1)] font-serif"
+              className="fixed z-50 hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 rounded-xl shadow-md"
               style={{
                 bottom: "2rem",
                 left: "50%",
@@ -215,7 +215,7 @@ export default function NotesPage({ session }: { session: Session }) {
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-9 h-9 text-lg font-serif border border-neutral-300 rounded bg-neutral-50 text-neutral-800 shadow-[inset_0_1px_1px_rgba(0,0,0,0.05)] hover:bg-neutral-100 active:translate-y-[1px] active:shadow-inner transition-all"
+                className="w-9 h-9 text-base border border-neutral-300 rounded-md bg-neutral-50 text-neutral-700 hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
               >
                 ←
               </Button>
@@ -227,7 +227,7 @@ export default function NotesPage({ session }: { session: Session }) {
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
-                className="w-9 h-9 text-lg font-serif border border-neutral-300 rounded bg-neutral-50 text-neutral-800 shadow-[inset_0_1px_1px_rgba(0,0,0,0.05)] hover:bg-neutral-100 active:translate-y-[1px] active:shadow-inner transition-all"
+                className="w-9 h-9 text-base border border-neutral-300 rounded-md bg-neutral-50 text-neutral-700 hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
               >
                 →
               </Button>
