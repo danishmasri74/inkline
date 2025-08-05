@@ -203,9 +203,9 @@ export default function NotesPage({ session }: { session: Session }) {
 
             {/* Floating line navigation buttons (visible only on desktop) */}
             <div
-              className="fixed z-50 hidden md:flex flex-row items-center gap-2 p-2 bg-[#f5f5dc] border border-neutral-300 rounded-md shadow-inner"
+              className="fixed z-30 hidden md:flex flex-row items-center gap-3 p-2 bg-[#f3efe2] border border-[#333] rounded-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"
               style={{
-                bottom: "5rem", // more space to avoid scroll-to-top button
+                bottom: "5rem",
                 right: "2rem",
               }}
             >
@@ -214,7 +214,7 @@ export default function NotesPage({ session }: { session: Session }) {
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-10 h-10 font-mono text-xl border border-black bg-white text-black hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
+                className="w-11 h-11 font-[Courier_New] text-xl border border-[#222] bg-[#fffef8] text-[#111] hover:bg-[#f0f0e8] active:translate-y-[1px] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] transition-all rounded-sm"
               >
                 ←
               </Button>
@@ -226,7 +226,7 @@ export default function NotesPage({ session }: { session: Session }) {
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
-                className="w-10 h-10 font-mono text-xl border border-black bg-white text-black hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
+                className="w-11 h-11 font-[Courier_New] text-xl border border-[#222] bg-[#fffef8] text-[#111] hover:bg-[#f0f0e8] active:translate-y-[1px] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] transition-all rounded-sm"
               >
                 →
               </Button>
