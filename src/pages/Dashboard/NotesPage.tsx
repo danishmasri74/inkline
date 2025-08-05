@@ -191,7 +191,7 @@ export default function NotesPage({ session }: { session: Session }) {
 
         {selectedNote ? (
           <div className="flex justify-center">
-            <div className="w-full max-w-prose">
+            <div className="w-full max-w-[85ch]">
               <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
             </div>
           </div>
