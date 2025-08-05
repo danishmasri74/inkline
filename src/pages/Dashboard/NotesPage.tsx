@@ -211,21 +211,23 @@ export default function NotesPage({ session }: { session: Session }) {
               }}
             >
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
+                className="w-9 h-9 text-lg font-serif border border-neutral-300 rounded bg-neutral-50 text-neutral-800 shadow-[inset_0_1px_1px_rgba(0,0,0,0.05)] hover:bg-neutral-100 active:translate-y-[1px] active:shadow-inner transition-all"
               >
                 ←
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusNextLine()}
                 disabled={
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
+                className="w-9 h-9 text-lg font-serif border border-neutral-300 rounded bg-neutral-50 text-neutral-800 shadow-[inset_0_1px_1px_rgba(0,0,0,0.05)] hover:bg-neutral-100 active:translate-y-[1px] active:shadow-inner transition-all"
               >
                 →
               </Button>
