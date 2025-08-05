@@ -90,6 +90,8 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         letterSpacing: "0.02em",
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
         minHeight: "75vh",
+        maxWidth: "85ch",
+        margin: "0 auto",
       }}
     >
       <Input
