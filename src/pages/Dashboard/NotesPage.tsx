@@ -201,35 +201,35 @@ export default function NotesPage({ session }: { session: Session }) {
               </div>
             </div>
 
-            {/* Floating line navigation buttons (hidden on mobile) */}
+            {/* Floating line navigation buttons (visible only on desktop) */}
             <div
-              className="fixed z-50 gap-3 px-4 py-2 bg-background shadow-md border border-border rounded-full hidden md:flex"
+              className="fixed z-50 hidden md:flex items-center gap-3 px-6 py-3 bg-[#fdf6e3] border border-[#d8cbb3] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.1)] font-serif"
               style={{
-                bottom: "1.5rem",
+                bottom: "2rem",
                 left: "50%",
                 transform: "translateX(-50%)",
               }}
             >
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-8 h-8"
+                className="w-9 h-9 text-lg border border-[#b9a88e] rounded shadow-inner bg-[#f5ecd8] hover:bg-[#f0e4c3]"
               >
-                &lt;
+                ←
               </Button>
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusNextLine()}
                 disabled={
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
-                className="w-8 h-8"
+                className="w-9 h-9 text-lg border border-[#b9a88e] rounded shadow-inner bg-[#f5ecd8] hover:bg-[#f0e4c3]"
               >
-                &gt;
+                →
               </Button>
             </div>
           </>
