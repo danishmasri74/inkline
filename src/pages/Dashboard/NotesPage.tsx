@@ -203,12 +203,10 @@ export default function NotesPage({ session }: { session: Session }) {
 
             {/* Floating line navigation buttons (visible only on desktop) */}
             <div
-              className="fixed z-40 hidden md:flex items-center gap-1 px-3 py-1.5 
-             bg-[#fdf6e3] border border-[#d8cbb3] rounded-md shadow-sm 
-             font-serif text-[15px]"
+              className="fixed z-50 hidden md:flex flex-col items-center gap-2 p-2 bg-white border border-neutral-200 rounded-lg shadow-md"
               style={{
                 bottom: "1.5rem",
-                left: "1.5rem",
+                right: "1.5rem",
               }}
             >
               <Button
@@ -216,8 +214,7 @@ export default function NotesPage({ session }: { session: Session }) {
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-8 h-8 px-0 text-sm font-serif border border-[#d8cbb3] rounded bg-[#fefae0] 
-               text-[#444] hover:bg-[#f2e9d0] active:translate-y-[1px] active:shadow-inner transition-all"
+                className="w-9 h-9 text-base border border-neutral-300 rounded-md bg-neutral-50 text-neutral-700 hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
               >
                 ←
               </Button>
@@ -229,8 +226,7 @@ export default function NotesPage({ session }: { session: Session }) {
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
-                className="w-8 h-8 px-0 text-sm font-serif border border-[#d8cbb3] rounded bg-[#fefae0] 
-               text-[#444] hover:bg-[#f2e9d0] active:translate-y-[1px] active:shadow-inner transition-all"
+                className="w-9 h-9 text-base border border-neutral-300 rounded-md bg-neutral-50 text-neutral-700 hover:bg-neutral-100 active:translate-y-px active:shadow-inner transition-all"
               >
                 →
               </Button>
