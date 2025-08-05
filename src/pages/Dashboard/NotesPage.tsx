@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
 import { Note } from "@/types/Notes";
@@ -21,6 +21,13 @@ export default function NotesPage({ session }: { session: Session }) {
   const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(
     () => () => {}
   );
+
+  const noteEditorRef = useRef<{
+    focusNextLine: () => void;
+    focusPrevLine: () => void;
+    getCurrentLine: () => number;
+    getLineCount: () => number;
+  } | null>(null);
 
   const userId = session.user.id;
   const noteLimit = 100;
@@ -85,8 +92,6 @@ export default function NotesPage({ session }: { session: Session }) {
     }
 
     setSelectedTableNoteIds([]);
-
-    // 👇 Refresh the table notes list
     refetchTableNotes();
   };
 
@@ -106,8 +111,6 @@ export default function NotesPage({ session }: { session: Session }) {
       prev.filter((note) => !selectedTableNoteIds.includes(note.id))
     );
     setSelectedTableNoteIds([]);
-
-    // 👇 Refresh the table notes list
     refetchTableNotes();
   };
 
@@ -128,13 +131,10 @@ export default function NotesPage({ session }: { session: Session }) {
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileSidebarOpen(false)}
           />
-
-          {/* Sliding panel */}
           <div className="relative w-72 max-w-[80vw] h-full bg-background shadow-lg transition-transform duration-300 ease-in-out transform translate-x-0">
             <Sidebar
               notes={notes}
@@ -165,8 +165,8 @@ export default function NotesPage({ session }: { session: Session }) {
         />
       </div>
 
-      <div className="flex-1 p-4 md:p-6">
-        {/* Mobile header with menu toggle */}
+      <div className="flex-1 p-4 md:p-6 relative">
+        {/* Mobile header */}
         <div className="md:hidden mb-4 flex justify-between items-center">
           <Button
             variant="ghost"
@@ -190,11 +190,38 @@ export default function NotesPage({ session }: { session: Session }) {
         />
 
         {selectedNote ? (
-          <div className="flex justify-center">
-            <div className="w-full max-w-[85ch]">
-              <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
+          <>
+            <div className="flex justify-center">
+              <div className="w-full max-w-[85ch]">
+                <NoteEditor
+                  ref={noteEditorRef}
+                  note={selectedNote}
+                  onUpdate={handleNoteUpdate}
+                />
+              </div>
             </div>
-          </div>
+
+            {/* Floating line navigation buttons */}
+            <div className="fixed bottom-6 left-6 z-50 flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => noteEditorRef.current?.focusPrevLine()}
+                disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
+              >
+                &lt;
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => noteEditorRef.current?.focusNextLine()}
+                disabled={
+                  noteEditorRef.current?.getCurrentLine?.() ===
+                  (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
+                }
+              >
+                &gt;
+              </Button>
+            </div>
+          </>
         ) : (
           <div className="w-full">
             <NotesIndex

@@ -1,7 +1,7 @@
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useEffect, useRef, useState } from "react";
 import { Note } from "@/types/Notes";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -12,7 +12,10 @@ type NoteEditorProps = {
 
 const MAX_BODY_LENGTH = 4096;
 
-export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
+const NoteEditor = forwardRef(function NoteEditor(
+  { note, onUpdate }: NoteEditorProps,
+  ref
+) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -53,7 +56,6 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 200);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -93,6 +95,15 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
     setCurrentLine(clampedIndex);
   };
 
+  // 👇 This exposes methods to the parent via ref
+  useImperativeHandle(ref, () => ({
+    focusLine,
+    focusNextLine: () => focusLine(currentLine + 1),
+    focusPrevLine: () => focusLine(currentLine - 1),
+    getCurrentLine: () => currentLine,
+    getLineCount: () => body.split("\n").length,
+  }));
+
   if (!note) {
     return (
       <p className="text-muted-foreground italic">Select a note to view/edit</p>
@@ -119,7 +130,6 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
         className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground"
       />
 
-      {/* Line navigation buttons */}
       <div className="flex gap-2 mb-4">
         <Button
           variant="outline"
@@ -179,4 +189,6 @@ export default function NoteEditor({ note, onUpdate }: NoteEditorProps) {
       )}
     </div>
   );
-}
+});
+
+export default NoteEditor;
