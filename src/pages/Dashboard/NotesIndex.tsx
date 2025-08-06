@@ -21,6 +21,7 @@ type NotesIndexProps = {
     key: SortKey;
     direction: SortDirection;
   }) => void;
+  onSelectNote: (id: string) => void;
 };
 
 const STORAGE_KEY = "notes_sort_config";
@@ -30,6 +31,7 @@ export default function NotesIndex({
   selectedIds,
   setSelectedIds,
   onSortConfigChange,
+  onSelectNote,
 }: NotesIndexProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortConfig, setSortConfig] = useState<{
@@ -214,7 +216,7 @@ export default function NotesIndex({
                 return (
                   <tr
                     key={note.id}
-                    onClick={() => navigate(`/dashboard/note/${note.id}`)}
+                    onClick={() => onSelectNote(note.id)}
                     className={`cursor-pointer border-b border-border transition-all duration-150 ${
                       isSelected
                         ? "bg-accent/20 border-l-4 border-accent"

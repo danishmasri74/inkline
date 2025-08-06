@@ -250,6 +250,7 @@ export default function NotesPage({ session }: { session: Session }) {
               selectedIds={selectedTableNoteIds}
               setSelectedIds={setSelectedTableNoteIds}
               notes={notes}
+              onSelectNote={handleSelectNote}
             />
           </div>
         )}
