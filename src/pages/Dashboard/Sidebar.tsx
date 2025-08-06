@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Note } from "@/types/Notes";
 import { isToday, isYesterday } from "date-fns";
 import inklineIcon from "@/assets/InkLine.png";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 type SidebarProps = {
   notes: Note[];
@@ -30,6 +31,8 @@ export default function Sidebar({
   onDeselect,
   onCreateNote,
 }: SidebarProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
   const { todayNotes, yesterdayNotes, olderNotes } = useMemo(() => {
     const today: Note[] = [];
     const yesterday: Note[] = [];
@@ -45,10 +48,37 @@ export default function Sidebar({
     return { todayNotes: today, yesterdayNotes: yesterday, olderNotes: older };
   }, [notes]);
 
+  const sections = useMemo(() => {
+    const data = [];
+    if (todayNotes.length) data.push({ label: "Today", notes: todayNotes });
+    if (yesterdayNotes.length)
+      data.push({ label: "Yesterday", notes: yesterdayNotes });
+    if (olderNotes.length) data.push({ label: "Older", notes: olderNotes });
+    return data;
+  }, [todayNotes, yesterdayNotes, olderNotes]);
+
+  const flatList = useMemo(() => {
+    const list: { type: "section" | "note"; label?: string; note?: Note }[] =
+      [];
+    for (const section of sections) {
+      list.push({ type: "section", label: section.label });
+      for (const note of section.notes) {
+        list.push({ type: "note", note });
+      }
+    }
+    return list;
+  }, [sections]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: flatList.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 44, // estimate row height (adjust if needed)
+    overscan: 10,
+  });
+
   const noteLimit = 100;
   const noteCount = notes.length;
   const progress = Math.min((noteCount / noteLimit) * 100, 100);
-
   const progressColor =
     progress >= 100
       ? "bg-destructive"
@@ -56,34 +86,9 @@ export default function Sidebar({
       ? "bg-warning"
       : "bg-primary";
 
-  const renderSection = (label: string, sectionNotes: Note[]) => (
-    <div key={label}>
-      <h3 className="text-xs font-medium text-muted-foreground mt-4 mb-1 px-3 uppercase tracking-wide">
-        {label}
-      </h3>
-      {sectionNotes.map((note) => (
-        <button
-          key={note.id}
-          onClick={() => onSelect(note.id)}
-          aria-current={note.id === selectedId ? "page" : undefined}
-          className={`relative text-left px-3 py-2 rounded transition-colors truncate w-full flex items-center gap-2 ${
-            note.id === selectedId
-              ? "bg-muted font-semibold text-foreground"
-              : "hover:bg-muted/30 text-muted-foreground"
-          }`}
-        >
-          {note.id === selectedId && (
-            <span className="absolute left-0 h-full w-1 bg-primary rounded-r"></span>
-          )}
-          <span className="truncate">{note.title || "Untitled"}</span>
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <aside className="w-full md:w-64 min-h-[100dvh] sticky top-0 flex flex-col bg-background md:border-r font-typewriter z-50 transition-transform md:translate-x-0">
-      {/* App Icon & Title as clickable div */}
+      {/* Header */}
       <div
         role="button"
         tabIndex={0}
@@ -137,38 +142,59 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Scrollable content */}
+      {/* Virtualized Scrollable Notes */}
       <nav
         aria-label="Notes"
         className="flex-1 min-h-0 flex flex-col overflow-hidden"
       >
-        <div className="flex-1 overflow-y-auto px-2 text-[15px] leading-snug space-y-1">
-          {loading ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <div key={`skeleton-${i}`} className="px-3 py-2">
-                <Skeleton className="h-6 w-full rounded" />
-              </div>
-            ))
-          ) : notes.length === 0 ? (
-            <div className="px-3 py-4 flex flex-col items-start space-y-2">
-              <p className="text-muted-foreground italic">No notes yet.</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onCreateNote ?? onDeselect}
-              >
-                Create your first note
-              </Button>
-            </div>
-          ) : (
-            [
-              { label: "Today", notes: todayNotes },
-              { label: "Yesterday", notes: yesterdayNotes },
-              { label: "Older", notes: olderNotes },
-            ]
-              .filter((section) => section.notes.length > 0)
-              .map(({ label, notes }) => renderSection(label, notes))
-          )}
+        <div ref={parentRef} className="flex-1 overflow-y-auto">
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: "relative",
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const item = flatList[virtualRow.index];
+              const isSection = item.type === "section";
+              const note = item.note;
+
+              return (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
+                  className={`absolute top-0 left-0 right-0 translate-y-[${virtualRow.start}px]`}
+                  style={{ transform: `translateY(${virtualRow.start}px)` }}
+                >
+                  {isSection ? (
+                    <h3 className="text-xs font-medium text-muted-foreground mt-4 mb-1 px-3 uppercase tracking-wide">
+                      {item.label}
+                    </h3>
+                  ) : (
+                    <button
+                      onClick={() => onSelect(note!.id)}
+                      aria-current={
+                        note!.id === selectedId ? "page" : undefined
+                      }
+                      className={`relative text-left px-3 py-2 rounded transition-colors truncate w-full flex items-center gap-2 ${
+                        note!.id === selectedId
+                          ? "bg-muted font-semibold text-foreground"
+                          : "hover:bg-muted/30 text-muted-foreground"
+                      }`}
+                    >
+                      {note!.id === selectedId && (
+                        <span className="absolute left-0 h-full w-1 bg-primary rounded-r"></span>
+                      )}
+                      <span className="truncate">
+                        {note!.title || "Untitled"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Progress bar */}
@@ -191,7 +217,7 @@ export default function Sidebar({
         </div>
       </nav>
 
-      {/* Footer with logout */}
+      {/* Footer */}
       <div className="border-t px-4 py-3 shrink-0 flex items-center">
         <div className="flex items-center gap-3 truncate w-full">
           <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground">
