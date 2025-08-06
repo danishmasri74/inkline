@@ -128,7 +128,7 @@ export default function Sidebar({
       <Separator />
 
       {/* Virtualized Scrollable Notes */}
-      <ScrollArea className="flex-1 overflow-hidden">
+      <ScrollArea className="flex-1 min-h-0">
         <div
           ref={parentRef}
           className="relative"
