@@ -18,6 +18,19 @@ type NoteEditorProps = {
 
 const MAX_BODY_LENGTH = 4096;
 
+const FONT_SIZES = ["smallest", "small", "regular", "big", "biggest"] as const;
+type FontSizeLevel = (typeof FONT_SIZES)[number];
+
+const FONT_SIZE_STYLES: Record<FontSizeLevel, string> = {
+  smallest: "14px",
+  small: "15px",
+  regular: "16px",
+  big: "18px",
+  biggest: "20px",
+};
+
+const LOCAL_STORAGE_KEY = "note-editor-font-size";
+
 const NoteEditor = forwardRef(function NoteEditor(
   { note, onUpdate }: NoteEditorProps,
   ref
@@ -26,10 +39,9 @@ const NoteEditor = forwardRef(function NoteEditor(
   const [body, setBody] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [currentLine, setCurrentLine] = useState(0);
-  const [fontSize, setFontSize] = useState<number>(16); // Font size state
+  const [fontSize, setFontSize] = useState<FontSizeLevel>("regular");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load note data
   useEffect(() => {
     if (note) {
       setTitle(note.title);
@@ -38,7 +50,6 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   }, [note]);
 
-  // Auto-save to Supabase on change
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (note && (title !== note.title || body !== note.body)) {
@@ -59,9 +70,8 @@ const NoteEditor = forwardRef(function NoteEditor(
     }, 1000);
 
     return () => clearTimeout(timeout);
-  }, [title, body, note, onUpdate]);
+  }, [title, body, note]);
 
-  // Scroll to top button visibility
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 200);
@@ -70,17 +80,30 @@ const NoteEditor = forwardRef(function NoteEditor(
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Font Size persistence in localStorage
   useEffect(() => {
-    const storedFontSize = localStorage.getItem("noteEditorFontSize");
-    if (storedFontSize) {
-      setFontSize(parseInt(storedFontSize, 10));
+    const storedSize = localStorage.getItem(LOCAL_STORAGE_KEY) as FontSizeLevel;
+    if (FONT_SIZES.includes(storedSize)) {
+      setFontSize(storedSize);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("noteEditorFontSize", fontSize.toString());
+    localStorage.setItem(LOCAL_STORAGE_KEY, fontSize);
   }, [fontSize]);
+
+  const increaseFontSize = () => {
+    const currentIndex = FONT_SIZES.indexOf(fontSize);
+    if (currentIndex < FONT_SIZES.length - 1) {
+      setFontSize(FONT_SIZES[currentIndex + 1]);
+    }
+  };
+
+  const decreaseFontSize = () => {
+    const currentIndex = FONT_SIZES.indexOf(fontSize);
+    if (currentIndex > 0) {
+      setFontSize(FONT_SIZES[currentIndex - 1]);
+    }
+  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -117,6 +140,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     setCurrentLine(clampedIndex);
   };
 
+  // Expose methods to parent
   useImperativeHandle(ref, () => ({
     focusLine,
     focusNextLine: () => focusLine(currentLine + 1),
@@ -124,14 +148,6 @@ const NoteEditor = forwardRef(function NoteEditor(
     getCurrentLine: () => currentLine,
     getLineCount: () => body.split("\n").length,
   }));
-
-  const increaseFontSize = () => {
-    setFontSize((prev) => Math.min(prev + 1, 32)); // Max 32px
-  };
-
-  const decreaseFontSize = () => {
-    setFontSize((prev) => Math.max(prev - 1, 12)); // Min 12px
-  };
 
   if (!note) {
     return (
@@ -141,18 +157,50 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   return (
     <div
-      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide prose max-w-none p-8 min-h-[75vh] md:shadow-md transition-all"
+      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide prose max-w-none p-8 min-h-[75vh] md:shadow-md"
       style={{
-        fontSize: `${fontSize}px`,
+        fontSize: FONT_SIZE_STYLES[fontSize],
         lineHeight: "1.8",
         letterSpacing: "0.02em",
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
         minHeight: "75vh",
         maxWidth: "85ch",
         margin: "0 auto",
-        transition: "font-size 0.3s ease", // Smooth font size change
       }}
     >
+      {/* Font Size Controls */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={decreaseFontSize}
+            disabled={fontSize === "smallest"}
+          >
+            A-
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={increaseFontSize}
+            disabled={fontSize === "biggest"}
+          >
+            A+
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Font: {fontSize}
+          </span>
+        </div>
+
+        <Button
+          variant="outline"
+          onClick={downloadAsTxt}
+          disabled={!note || body.trim() === ""}
+        >
+          Download as .txt
+        </Button>
+      </div>
+
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -176,25 +224,6 @@ const NoteEditor = forwardRef(function NoteEditor(
       <div className="flex justify-between items-center mt-4">
         <div className="text-sm text-muted-foreground">
           {body.length} / {MAX_BODY_LENGTH}
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={decreaseFontSize}>
-              A-
-            </Button>
-            <Button variant="outline" size="icon" onClick={increaseFontSize}>
-              A+
-            </Button>
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={downloadAsTxt}
-            disabled={!note || body.trim() === ""}
-          >
-            Download as .txt
-          </Button>
         </div>
       </div>
 
