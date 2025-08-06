@@ -22,11 +22,11 @@ const FONT_SIZES = ["smallest", "small", "regular", "big", "biggest"] as const;
 type FontSizeLevel = (typeof FONT_SIZES)[number];
 
 const FONT_SIZE_STYLES: Record<FontSizeLevel, string> = {
-  smallest: "4px",
-  small: "18px",
-  regular: "24px",
-  big: "30px",
-  biggest: "400px",
+  smallest: "12px",
+  small: "16px",
+  regular: "20px",
+  big: "24px",
+  biggest: "32px",
 };
 
 const LOCAL_STORAGE_KEY = "note-editor-font-size";
@@ -42,6 +42,7 @@ const NoteEditor = forwardRef(function NoteEditor(
   const [fontSize, setFontSize] = useState<FontSizeLevel>("regular");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Load note data
   useEffect(() => {
     if (note) {
       setTitle(note.title);
@@ -50,6 +51,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   }, [note]);
 
+  // Auto-save
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (note && (title !== note.title || body !== note.body)) {
@@ -72,6 +74,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     return () => clearTimeout(timeout);
   }, [title, body, note]);
 
+  // Scroll to top button
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 200);
@@ -80,6 +83,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Load font size from localStorage
   useEffect(() => {
     const storedSize = localStorage.getItem(LOCAL_STORAGE_KEY) as FontSizeLevel;
     if (FONT_SIZES.includes(storedSize)) {
@@ -87,6 +91,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   }, []);
 
+  // Save font size to localStorage
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, fontSize);
   }, [fontSize]);
@@ -140,7 +145,6 @@ const NoteEditor = forwardRef(function NoteEditor(
     setCurrentLine(clampedIndex);
   };
 
-  // Expose methods to parent
   useImperativeHandle(ref, () => ({
     focusLine,
     focusNextLine: () => focusLine(currentLine + 1),
@@ -159,7 +163,6 @@ const NoteEditor = forwardRef(function NoteEditor(
     <div
       className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide prose max-w-none p-8 min-h-[75vh] md:shadow-md"
       style={{
-        fontSize: FONT_SIZE_STYLES[fontSize],
         lineHeight: "1.8",
         letterSpacing: "0.02em",
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
@@ -205,6 +208,10 @@ const NoteEditor = forwardRef(function NoteEditor(
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
+        style={{
+          fontSize: FONT_SIZE_STYLES[fontSize],
+          transition: "font-size 0.3s ease",
+        }}
         className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground"
       />
 
@@ -218,7 +225,11 @@ const NoteEditor = forwardRef(function NoteEditor(
         }}
         rows={20}
         placeholder="Start typing your note..."
-        className="resize-none bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground font-typewriter text-base"
+        style={{
+          fontSize: FONT_SIZE_STYLES[fontSize],
+          transition: "font-size 0.3s ease",
+        }}
+        className="resize-none bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground font-typewriter"
       />
 
       <div className="flex justify-between items-center mt-4">
