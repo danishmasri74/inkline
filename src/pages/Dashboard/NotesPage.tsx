@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  Routes,
+  Route,
+  Outlet,
+} from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
 import { Note } from "@/types/Notes";
@@ -17,10 +23,13 @@ export default function NotesPage({ session }: { session: Session }) {
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>([]);
-  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(() => () => {});
+  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>(
+    []
+  );
+  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(
+    () => () => {}
+  );
 
   const noteEditorRef = useRef<{
     focusNextLine: () => void;
@@ -44,23 +53,14 @@ export default function NotesPage({ session }: { session: Session }) {
         console.error("Error fetching notes:", error.message);
       } else {
         setNotes(data || []);
-        if (data && data.length > 0) {
-          if (id) {
-            const exists = data.find((n) => n.id === id);
-            setSelectedNoteId(exists ? id : data[0].id);
-          } else {
-            setSelectedNoteId(data[0].id);
-          }
-        }
       }
       setLoading(false);
     };
 
     fetchNotes();
-  }, [userId, id]);
+  }, [userId]);
 
   const handleSelectNote = (noteId: string | null) => {
-    setSelectedNoteId(noteId);
     if (noteId) {
       navigate(`/dashboard/note/${noteId}`);
     } else {
@@ -83,32 +83,22 @@ export default function NotesPage({ session }: { session: Session }) {
     if (error) return console.error("Error creating note:", error.message);
 
     setNotes((prev) => [data, ...prev]);
-    handleSelectNote(data.id);
+    navigate(`/dashboard/note/${data.id}`);
   };
 
   const handleDeleteNote = async () => {
-    const idsToDelete = selectedNoteId
-      ? [selectedNoteId]
-      : selectedTableNoteIds;
-
-    if (idsToDelete.length === 0) return;
+    if (!id) return;
 
     const { error } = await supabase
       .from("notes")
       .delete()
-      .in("id", idsToDelete)
+      .eq("id", id)
       .eq("user_id", userId);
 
-    if (error) return console.error("Error deleting note(s):", error.message);
+    if (error) return console.error("Error deleting note:", error.message);
 
-    setNotes((prev) => prev.filter((note) => !idsToDelete.includes(note.id)));
-
-    if (idsToDelete.includes(selectedNoteId!)) {
-      handleSelectNote(null);
-    }
-
-    setSelectedTableNoteIds([]);
-    refetchTableNotes();
+    setNotes((prev) => prev.filter((note) => note.id !== id));
+    navigate(`/dashboard`);
   };
 
   const handleDeleteSelectedNotes = async () => {
@@ -120,7 +110,8 @@ export default function NotesPage({ session }: { session: Session }) {
       .in("id", selectedTableNoteIds)
       .eq("user_id", userId);
 
-    if (error) return console.error("Error deleting selected notes:", error.message);
+    if (error)
+      return console.error("Error deleting selected notes:", error.message);
 
     setNotes((prev) =>
       prev.filter((note) => !selectedTableNoteIds.includes(note.id))
@@ -139,20 +130,21 @@ export default function NotesPage({ session }: { session: Session }) {
     );
   };
 
-  const selectedNote = notes.find((note) => note.id === selectedNoteId) || null;
+  const selectedNote = notes.find((note) => note.id === id) || null;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
+      {/* Mobile Sidebar */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          <div className="relative w-72 max-w-[80vw] h-full bg-background shadow-lg transition-transform duration-300 ease-in-out transform translate-x-0">
+          <div className="relative w-72 max-w-[80vw] h-full bg-background shadow-lg">
             <Sidebar
               notes={notes}
-              selectedId={selectedNoteId}
+              selectedId={id || null}
               onSelect={(id) => {
                 handleSelectNote(id);
                 setMobileSidebarOpen(false);
@@ -166,10 +158,11 @@ export default function NotesPage({ session }: { session: Session }) {
         </div>
       )}
 
+      {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar
           notes={notes}
-          selectedId={selectedNoteId}
+          selectedId={id || null}
           onSelect={handleSelectNote}
           onLogout={handleLogout}
           loading={loading}
@@ -191,69 +184,79 @@ export default function NotesPage({ session }: { session: Session }) {
 
         <Header
           onNewNote={handleNewNote}
-          onDelete={selectedNote ? handleDeleteNote : handleDeleteSelectedNotes}
-          isDeleteDisabled={
-            selectedNote ? !selectedNoteId : selectedTableNoteIds.length === 0
-          }
+          onDelete={id ? handleDeleteNote : handleDeleteSelectedNotes}
+          isDeleteDisabled={id ? !id : selectedTableNoteIds.length === 0}
           isNewDisabled={notes.length >= noteLimit}
           noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
           onDeselect={() => handleSelectNote(null)}
-          isIndexPage={!selectedNoteId}
+          isIndexPage={!id}
         />
 
-        {selectedNote ? (
-          <>
-            <div className="flex justify-center">
-              <div className="w-full max-w-[85ch]">
-                <NoteEditor
-                  ref={noteEditorRef}
-                  note={selectedNote}
-                  onUpdate={handleNoteUpdate}
-                />
-              </div>
-            </div>
+        <Routes>
+          <Route
+            path=""
+            element={
+              <NotesIndex
+                selectedIds={selectedTableNoteIds}
+                setSelectedIds={setSelectedTableNoteIds}
+                notes={notes}
+                onSelectNote={(noteId) => handleSelectNote(noteId)}
+              />
+            }
+          />
+          <Route
+            path="note/:id"
+            element={
+              selectedNote ? (
+                <>
+                  <div className="flex justify-center">
+                    <div className="w-full max-w-[85ch]">
+                      <NoteEditor
+                        ref={noteEditorRef}
+                        note={selectedNote}
+                        onUpdate={handleNoteUpdate}
+                      />
+                    </div>
+                  </div>
 
-            <div
-              className="fixed z-40 hidden md:flex flex-row gap-2 p-2 border border-neutral-300 rounded-md bg-[#f6f4ed] shadow-md"
-              style={{
-                bottom: "5rem",
-                right: "2rem",
-              }}
-            >
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => noteEditorRef.current?.focusPrevLine()}
-                disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
-              >
-                ←
-              </Button>
+                  {/* Floating Arrows */}
+                  <div
+                    className="fixed z-40 hidden md:flex flex-row gap-2 p-2 border border-neutral-300 rounded-md bg-[#f6f4ed] shadow-md"
+                    style={{
+                      bottom: "5rem",
+                      right: "2rem",
+                    }}
+                  >
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => noteEditorRef.current?.focusPrevLine()}
+                      disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
+                      className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
+                    >
+                      ←
+                    </Button>
 
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => noteEditorRef.current?.focusNextLine()}
-                disabled={
-                  noteEditorRef.current?.getCurrentLine?.() ===
-                  (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
-                }
-                className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
-              >
-                →
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="w-full">
-            <NotesIndex
-              selectedIds={selectedTableNoteIds}
-              setSelectedIds={setSelectedTableNoteIds}
-              notes={notes}
-              onSelectNote={handleSelectNote}
-            />
-          </div>
-        )}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => noteEditorRef.current?.focusNextLine()}
+                      disabled={
+                        noteEditorRef.current?.getCurrentLine?.() ===
+                        (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
+                      }
+                      className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
+                    >
+                      →
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="p-4">Note not found.</div>
+              )
+            }
+          />
+        </Routes>
       </div>
     </div>
   );
