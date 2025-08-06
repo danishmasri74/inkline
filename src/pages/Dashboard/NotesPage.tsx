@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
 import { Note } from "@/types/Notes";
@@ -11,16 +12,15 @@ import { Button } from "@/components/ui/button";
 import NotesIndex from "./NotesIndex";
 
 export default function NotesPage({ session }: { session: Session }) {
+  const { id } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
+
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>(
-    []
-  );
-  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(
-    () => () => {}
-  );
+  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>([]);
+  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(() => () => {});
 
   const noteEditorRef = useRef<{
     focusNextLine: () => void;
@@ -44,13 +44,29 @@ export default function NotesPage({ session }: { session: Session }) {
         console.error("Error fetching notes:", error.message);
       } else {
         setNotes(data || []);
-        if (data && data.length > 0) setSelectedNoteId(data[0].id);
+        if (data && data.length > 0) {
+          if (id) {
+            const exists = data.find((n) => n.id === id);
+            setSelectedNoteId(exists ? id : data[0].id);
+          } else {
+            setSelectedNoteId(data[0].id);
+          }
+        }
       }
       setLoading(false);
     };
 
     fetchNotes();
-  }, [userId]);
+  }, [userId, id]);
+
+  const handleSelectNote = (noteId: string | null) => {
+    setSelectedNoteId(noteId);
+    if (noteId) {
+      navigate(`/dashboard/note/${noteId}`);
+    } else {
+      navigate(`/dashboard`);
+    }
+  };
 
   const handleNewNote = async () => {
     if (notes.length >= noteLimit) {
@@ -67,7 +83,7 @@ export default function NotesPage({ session }: { session: Session }) {
     if (error) return console.error("Error creating note:", error.message);
 
     setNotes((prev) => [data, ...prev]);
-    setSelectedNoteId(data.id);
+    handleSelectNote(data.id);
   };
 
   const handleDeleteNote = async () => {
@@ -88,7 +104,7 @@ export default function NotesPage({ session }: { session: Session }) {
     setNotes((prev) => prev.filter((note) => !idsToDelete.includes(note.id)));
 
     if (idsToDelete.includes(selectedNoteId!)) {
-      setSelectedNoteId(null);
+      handleSelectNote(null);
     }
 
     setSelectedTableNoteIds([]);
@@ -104,8 +120,7 @@ export default function NotesPage({ session }: { session: Session }) {
       .in("id", selectedTableNoteIds)
       .eq("user_id", userId);
 
-    if (error)
-      return console.error("Error deleting selected notes:", error.message);
+    if (error) return console.error("Error deleting selected notes:", error.message);
 
     setNotes((prev) =>
       prev.filter((note) => !selectedTableNoteIds.includes(note.id))
@@ -128,7 +143,6 @@ export default function NotesPage({ session }: { session: Session }) {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
-      {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
           <div
@@ -140,7 +154,7 @@ export default function NotesPage({ session }: { session: Session }) {
               notes={notes}
               selectedId={selectedNoteId}
               onSelect={(id) => {
-                setSelectedNoteId(id);
+                handleSelectNote(id);
                 setMobileSidebarOpen(false);
               }}
               onLogout={handleLogout}
@@ -152,21 +166,19 @@ export default function NotesPage({ session }: { session: Session }) {
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar
           notes={notes}
           selectedId={selectedNoteId}
-          onSelect={setSelectedNoteId}
+          onSelect={handleSelectNote}
           onLogout={handleLogout}
           loading={loading}
           userEmail={session.user.email!}
-          onDeselect={() => setSelectedNoteId(null)}
+          onDeselect={() => handleSelectNote(null)}
         />
       </div>
 
       <div className="flex-1 p-4 md:p-6 relative">
-        {/* Mobile header */}
         <div className="md:hidden mb-4 flex justify-between items-center">
           <Button
             variant="ghost"
@@ -185,7 +197,7 @@ export default function NotesPage({ session }: { session: Session }) {
           }
           isNewDisabled={notes.length >= noteLimit}
           noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
-          onDeselect={() => setSelectedNoteId(null)}
+          onDeselect={() => handleSelectNote(null)}
           isIndexPage={!selectedNoteId}
         />
 
@@ -201,7 +213,6 @@ export default function NotesPage({ session }: { session: Session }) {
               </div>
             </div>
 
-            {/* Floating line navigation buttons (visible only on desktop) */}
             <div
               className="fixed z-40 hidden md:flex flex-row gap-2 p-2 border border-neutral-300 rounded-md bg-[#f6f4ed] shadow-md"
               style={{
