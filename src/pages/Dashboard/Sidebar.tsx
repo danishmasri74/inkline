@@ -1,6 +1,5 @@
 import { useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Note } from "@/types/Notes";
@@ -127,12 +126,13 @@ export default function Sidebar({
 
       <Separator />
 
-      {/* Virtualized Scrollable Notes */}
-      <ScrollArea className="flex-1 min-h-0">
+      {/* Scrollable Virtualized Notes */}
+      <div className="flex-1 min-h-0 overflow-y-auto" ref={parentRef}>
         <div
-          ref={parentRef}
-          className="relative"
-          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            position: "relative",
+          }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const item = flatList[virtualRow.index];
@@ -168,7 +168,7 @@ export default function Sidebar({
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Progress Bar */}
       <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
@@ -192,7 +192,7 @@ export default function Sidebar({
       <Separator />
 
       {/* Footer */}
-      <div className="px-4 py-3 flex items-center gap-3">
+      <div className="px-4 py-3 flex items-center gap-3 shrink-0">
         <Avatar className="h-8 w-8">
           <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
         </Avatar>
