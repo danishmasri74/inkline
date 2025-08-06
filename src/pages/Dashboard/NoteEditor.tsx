@@ -22,11 +22,11 @@ const FONT_SIZES = ["smallest", "small", "regular", "big", "biggest"] as const;
 type FontSizeLevel = (typeof FONT_SIZES)[number];
 
 const FONT_SIZE_STYLES: Record<FontSizeLevel, string> = {
-  smallest: "12px",
+  smallest: "14px",
   small: "16px",
-  regular: "20px",
-  big: "24px",
-  biggest: "32px",
+  regular: "18px",
+  big: "22px",
+  biggest: "28px",
 };
 
 const LOCAL_STORAGE_KEY = "note-editor-font-size";
