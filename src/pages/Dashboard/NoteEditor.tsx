@@ -1,4 +1,10 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,8 +26,10 @@ const NoteEditor = forwardRef(function NoteEditor(
   const [body, setBody] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [currentLine, setCurrentLine] = useState(0);
+  const [fontSize, setFontSize] = useState<number>(16); // Font size state
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Load note data
   useEffect(() => {
     if (note) {
       setTitle(note.title);
@@ -30,6 +38,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   }, [note]);
 
+  // Auto-save to Supabase on change
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (note && (title !== note.title || body !== note.body)) {
@@ -50,8 +59,9 @@ const NoteEditor = forwardRef(function NoteEditor(
     }, 1000);
 
     return () => clearTimeout(timeout);
-  }, [title, body, note]);
+  }, [title, body, note, onUpdate]);
 
+  // Scroll to top button visibility
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 200);
@@ -59,6 +69,18 @@ const NoteEditor = forwardRef(function NoteEditor(
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Font Size persistence in localStorage
+  useEffect(() => {
+    const storedFontSize = localStorage.getItem("noteEditorFontSize");
+    if (storedFontSize) {
+      setFontSize(parseInt(storedFontSize, 10));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("noteEditorFontSize", fontSize.toString());
+  }, [fontSize]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -95,7 +117,6 @@ const NoteEditor = forwardRef(function NoteEditor(
     setCurrentLine(clampedIndex);
   };
 
-  // 👇 This exposes methods to the parent via ref
   useImperativeHandle(ref, () => ({
     focusLine,
     focusNextLine: () => focusLine(currentLine + 1),
@@ -103,6 +124,14 @@ const NoteEditor = forwardRef(function NoteEditor(
     getCurrentLine: () => currentLine,
     getLineCount: () => body.split("\n").length,
   }));
+
+  const increaseFontSize = () => {
+    setFontSize((prev) => Math.min(prev + 1, 32)); // Max 32px
+  };
+
+  const decreaseFontSize = () => {
+    setFontSize((prev) => Math.max(prev - 1, 12)); // Min 12px
+  };
 
   if (!note) {
     return (
@@ -112,15 +141,16 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   return (
     <div
-      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide prose max-w-none p-8 min-h-[75vh] md:shadow-md"
+      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide prose max-w-none p-8 min-h-[75vh] md:shadow-md transition-all"
       style={{
-        fontSize: "16px",
+        fontSize: `${fontSize}px`,
         lineHeight: "1.8",
         letterSpacing: "0.02em",
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
         minHeight: "75vh",
         maxWidth: "85ch",
         margin: "0 auto",
+        transition: "font-size 0.3s ease", // Smooth font size change
       }}
     >
       <Input
@@ -148,13 +178,24 @@ const NoteEditor = forwardRef(function NoteEditor(
           {body.length} / {MAX_BODY_LENGTH}
         </div>
 
-        <Button
-          variant="outline"
-          onClick={downloadAsTxt}
-          disabled={!note || body.trim() === ""}
-        >
-          Download as .txt
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={decreaseFontSize}>
+              A-
+            </Button>
+            <Button variant="outline" size="icon" onClick={increaseFontSize}>
+              A+
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            onClick={downloadAsTxt}
+            disabled={!note || body.trim() === ""}
+          >
+            Download as .txt
+          </Button>
+        </div>
       </div>
 
       {showScrollTop && (
