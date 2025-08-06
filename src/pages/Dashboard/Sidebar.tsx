@@ -88,7 +88,7 @@ export default function Sidebar({
       : "bg-primary";
 
   return (
-    <aside className="w-full md:w-64 min-h-[100dvh] sticky top-0 flex flex-col bg-background md:border-r font-typewriter z-50">
+    <aside className="w-full md:w-64 min-h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50">
       {/* Header */}
       <div
         role="button"
@@ -126,8 +126,8 @@ export default function Sidebar({
 
       <Separator />
 
-      {/* Scrollable Virtualized Notes */}
-      <div className="flex-1 min-h-0 overflow-y-auto" ref={parentRef}>
+      {/* Scrollable Virtualized List */}
+      <div ref={parentRef} className="flex-1 overflow-y-auto">
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -136,31 +136,31 @@ export default function Sidebar({
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const item = flatList[virtualRow.index];
-            const isSection = item.type === "section";
-            const note = item.note;
-
             return (
               <div
                 key={virtualRow.key}
-                data-index={virtualRow.index}
                 ref={rowVirtualizer.measureElement}
                 className="absolute top-0 left-0 right-0"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
+                style={{
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
               >
-                {isSection ? (
+                {item.type === "section" ? (
                   <h3 className="text-xs font-medium text-muted-foreground mt-4 mb-1 px-3 uppercase tracking-wide">
                     {item.label}
                   </h3>
                 ) : (
                   <Button
-                    variant={note!.id === selectedId ? "secondary" : "ghost"}
+                    variant={
+                      item.note!.id === selectedId ? "secondary" : "ghost"
+                    }
                     className={`w-full justify-start px-3 py-2 truncate ${
-                      note!.id === selectedId ? "font-semibold" : ""
+                      item.note!.id === selectedId ? "font-semibold" : ""
                     }`}
-                    onClick={() => onSelect(note!.id)}
+                    onClick={() => onSelect(item.note!.id)}
                   >
                     <span className="truncate">
-                      {note!.title || "Untitled"}
+                      {item.note!.title || "Untitled"}
                     </span>
                   </Button>
                 )}
@@ -170,41 +170,40 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
-        <span>Notes</span>
-        <span>
-          {noteCount} / {noteLimit}
-        </span>
-      </div>
-      <div className="px-4 pb-2">
-        <div className="w-full bg-muted h-1.5 rounded">
-          <div
-            className={`h-full ${progressColor}`}
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        {progress >= 100 && (
-          <p className="text-destructive text-xs mt-1">Note limit reached.</p>
-        )}
-      </div>
-
-      <Separator />
-
       {/* Footer */}
-      <div className="px-4 py-3 flex items-center gap-3 shrink-0">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col overflow-hidden">
-          <span className="text-sm font-medium truncate">{userEmail}</span>
-          <Button
-            variant="link"
-            className="text-xs text-muted-foreground px-0 h-auto"
-            onClick={onLogout}
-          >
-            Log out
-          </Button>
+      <div className="shrink-0">
+        <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
+          <span>Notes</span>
+          <span>
+            {noteCount} / {noteLimit}
+          </span>
+        </div>
+        <div className="px-4 pb-2">
+          <div className="w-full bg-muted h-1.5 rounded">
+            <div
+              className={`h-full ${progressColor}`}
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          {progress >= 100 && (
+            <p className="text-destructive text-xs mt-1">Note limit reached.</p>
+          )}
+        </div>
+        <Separator />
+        <div className="px-4 py-3 flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-sm font-medium truncate">{userEmail}</span>
+            <Button
+              variant="link"
+              className="text-xs text-muted-foreground px-0 h-auto"
+              onClick={onLogout}
+            >
+              Log out
+            </Button>
+          </div>
         </div>
       </div>
     </aside>
