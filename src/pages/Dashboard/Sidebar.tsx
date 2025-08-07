@@ -127,12 +127,15 @@ export default function Sidebar({
       <Separator />
 
       {/* Scrollable Virtualized List */}
-      <div ref={parentRef} className="flex-1 overflow-y-auto custom-scrollbar">
+      <div
+        ref={parentRef}
+        className="flex-1 relative overflow-y-auto custom-scrollbar"
+      >
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
-            position: "relative",
           }}
+          className="relative w-full"
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const item = flatList[virtualRow.index];
