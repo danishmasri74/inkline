@@ -145,15 +145,20 @@ export default function Sidebar({
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
                 {item.type === "section" ? (
-                  <h3 className="sticky top-0 z-10 text-xs font-semibold bg-background/80 text-muted-foreground px-4 py-2 uppercase tracking-wider backdrop-blur-md">
-                    {item.label}
-                  </h3>
+                  <>
+                    {virtualRow.index !== 0 && (
+                      <div className="border-t border-muted-foreground/20 mx-4" />
+                    )}
+                    <h3 className="sticky top-0 z-10 text-sm font-bold text-muted-foreground px-4 py-2 uppercase tracking-widest bg-muted/60 backdrop-blur-md border-l-4 border-primary">
+                      {item.label}
+                    </h3>
+                  </>
                 ) : (
                   <Button
                     variant={
                       item.note!.id === selectedId ? "secondary" : "ghost"
                     }
-                    className={`w-full justify-start px-4 py-2 rounded-lg truncate transition text-sm hover:bg-accent ${
+                    className={`w-full justify-start px-4 py-2 rounded-lg truncate transition text-sm hover:bg-muted ${
                       item.note!.id === selectedId
                         ? "font-semibold bg-accent/60 shadow-sm"
                         : ""
