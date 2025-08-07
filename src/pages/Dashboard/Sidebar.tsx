@@ -6,6 +6,7 @@ import { Note } from "@/types/Notes";
 import { isToday, isYesterday } from "date-fns";
 import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { motion } from "framer-motion";
 
 type SidebarProps = {
   notes: Note[];
@@ -20,6 +21,14 @@ type SidebarProps = {
 };
 
 const getInitial = (email: string) => email?.charAt(0)?.toUpperCase() ?? "?";
+
+const sidebarQuotes = [
+  "“Ink remembers when we do not.”",
+  "“Let your thoughts spill freely, the page is patient.”",
+  "“One note at a time, your voice unfolds.”",
+  "“A day forgotten is a line unwritten.”",
+  "“Every note a whisper of your mind.”",
+];
 
 export default function Sidebar({
   notes,
@@ -95,6 +104,10 @@ export default function Sidebar({
       ? "bg-yellow-500"
       : "bg-primary";
 
+  const randomQuote = useMemo(() => {
+    return sidebarQuotes[Math.floor(Math.random() * sidebarQuotes.length)];
+  }, []);
+
   return (
     <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 md:fixed md:left-0 md:top-0">
       {/* Header */}
@@ -113,7 +126,10 @@ export default function Sidebar({
           className="h-12 w-12 rounded-md"
         />
         <div className="flex flex-col">
-          <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
+          <div className="flex items-center gap-1">
+            <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
+            <span className="animate-blink text-xl">|</span>
+          </div>
           <p className="text-xs text-muted-foreground">No fuss. Just notes.</p>
         </div>
         {onClose && (
@@ -157,27 +173,44 @@ export default function Sidebar({
                 }}
               >
                 {item.type === "section" ? (
-                  <h3 className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground bg-background/80 backdrop-blur border-b border-border flex items-center gap-2">
+                  <motion.h3
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: 0.05 * virtualRow.index,
+                    }}
+                    className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground bg-background/80 backdrop-blur border-b border-border flex items-center gap-2"
+                  >
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground" />
                     <span className="flex-1 truncate">{item.label}</span>
                     <span className="text-[10px] text-muted-foreground">
                       {item.noteCount}
                     </span>
-                  </h3>
+                  </motion.h3>
                 ) : (
-                  <Button
-                    variant={
-                      item.note!.id === selectedId ? "secondary" : "ghost"
-                    }
-                    className={`w-full justify-start px-3 py-2 rounded-md truncate transition hover:bg-accent ${
-                      item.note!.id === selectedId ? "font-semibold" : ""
-                    }`}
-                    onClick={() => onSelect(item.note!.id)}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: 0.03 * virtualRow.index,
+                    }}
                   >
-                    <span className="truncate">
-                      {item.note!.title || "Untitled"}
-                    </span>
-                  </Button>
+                    <Button
+                      variant={
+                        item.note!.id === selectedId ? "secondary" : "ghost"
+                      }
+                      className={`w-full justify-start px-3 py-2 rounded-md truncate transition hover:bg-accent ${
+                        item.note!.id === selectedId ? "font-semibold" : ""
+                      }`}
+                      onClick={() => onSelect(item.note!.id)}
+                    >
+                      <span className="truncate">
+                        {item.note!.title || "Untitled"}
+                      </span>
+                    </Button>
+                  </motion.div>
                 )}
               </div>
             );
@@ -220,7 +253,28 @@ export default function Sidebar({
             </Button>
           </div>
         </div>
+
+        {/* Whispered Quote */}
+        <p className="text-[10px] italic text-muted-foreground text-center px-4 pb-2 mt-1">
+          {randomQuote}
+          <span className="animate-blink ml-1">|</span>
+        </p>
       </div>
+
+      {/* Blinking Cursor Style */}
+      <style>
+        {`
+          @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0; }
+          }
+
+          .animate-blink {
+            display: inline-block;
+            animation: blink 1.2s step-end infinite;
+          }
+        `}
+      </style>
     </aside>
   );
 }
