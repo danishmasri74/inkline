@@ -88,7 +88,7 @@ export default function Sidebar({
       : "bg-primary";
 
   return (
-    <aside className="w-full md:w-64 min-h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50">
+    <aside className="w-full md:w-64 min-h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 shadow-lg">
       {/* Header */}
       <div
         role="button"
@@ -97,12 +97,12 @@ export default function Sidebar({
         onKeyDown={(e) =>
           (e.key === "Enter" || e.key === " ") && onDeselect?.()
         }
-        className="cursor-pointer p-4 flex items-center gap-4 shrink-0 hover:bg-muted transition"
+        className="cursor-pointer p-4 flex items-center gap-3 shrink-0 hover:bg-muted/80 transition rounded-b-md"
       >
         <img
           src={inklineIcon}
           alt="InkLine Logo"
-          className="h-10 w-10 rounded-sm"
+          className="h-12 w-12 rounded-md"
         />
         <div className="flex flex-col">
           <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
@@ -117,7 +117,7 @@ export default function Sidebar({
               onClose();
             }}
             aria-label="Close sidebar"
-            className="ml-auto md:hidden"
+            className="ml-auto md:hidden hover:bg-accent"
           >
             <XIcon className="h-5 w-5" />
           </Button>
@@ -127,7 +127,7 @@ export default function Sidebar({
       <Separator />
 
       {/* Scrollable Virtualized List */}
-      <div ref={parentRef} className="flex-1 overflow-y-auto">
+      <div ref={parentRef} className="flex-1 overflow-y-auto custom-scrollbar">
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -146,7 +146,7 @@ export default function Sidebar({
                 }}
               >
                 {item.type === "section" ? (
-                  <h3 className="text-xs font-medium text-muted-foreground mt-4 mb-1 px-3 uppercase tracking-wide">
+                  <h3 className="sticky top-0 z-10 text-xs font-medium bg-background text-muted-foreground px-3 py-2 uppercase tracking-wide backdrop-blur-sm">
                     {item.label}
                   </h3>
                 ) : (
@@ -154,7 +154,7 @@ export default function Sidebar({
                     variant={
                       item.note!.id === selectedId ? "secondary" : "ghost"
                     }
-                    className={`w-full justify-start px-3 py-2 truncate ${
+                    className={`w-full justify-start px-3 py-2 rounded-md truncate transition hover:bg-accent ${
                       item.note!.id === selectedId ? "font-semibold" : ""
                     }`}
                     onClick={() => onSelect(item.note!.id)}
@@ -171,7 +171,7 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="shrink-0">
+      <div className="shrink-0 bg-muted/40 rounded-t-md">
         <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
           <span>Notes</span>
           <span>
@@ -179,9 +179,9 @@ export default function Sidebar({
           </span>
         </div>
         <div className="px-4 pb-2">
-          <div className="w-full bg-muted h-1.5 rounded">
+          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
             <div
-              className={`h-full ${progressColor}`}
+              className={`h-full ${progressColor} transition-all duration-300`}
               style={{ width: `${progress}%` }}
             ></div>
           </div>
@@ -191,14 +191,14 @@ export default function Sidebar({
         </div>
         <Separator />
         <div className="px-4 py-3 flex items-center gap-3">
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-9 w-9 border">
             <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col overflow-hidden">
             <span className="text-sm font-medium truncate">{userEmail}</span>
             <Button
               variant="link"
-              className="text-xs text-muted-foreground px-0 h-auto"
+              className="text-xs text-muted-foreground px-0 h-auto hover:underline"
               onClick={onLogout}
             >
               Log out
