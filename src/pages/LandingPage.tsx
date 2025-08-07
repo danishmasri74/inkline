@@ -29,28 +29,39 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (index < fullText.length) {
+      const char = fullText.charAt(index);
+      const isPauseChar = /[.,]/.test(char);
+      const isEllipsis = fullText.slice(index, index + 3) === "...";
+
+      const delay = isEllipsis
+        ? 500
+        : isPauseChar
+        ? 250
+        : 50 + Math.random() * 100;
+
       const timeout = setTimeout(() => {
-        setTypedText((prev) => prev + fullText[index]);
+        setTypedText((prev) => prev + char);
         setIndex((prev) => prev + 1);
-      }, 90);
+      }, delay);
+
       return () => clearTimeout(timeout);
     }
-  }, [index, fullText]);
+  }, [index]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#f5f1e8] text-center px-6 font-typewriter">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#fdfaf4] text-center px-6 font-typewriter">
       {/* Logo */}
       <motion.img
         src={InkLineIcon}
         alt="InkLine Logo"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-20 h-20 mb-6 rounded-md"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="w-20 h-20 mb-6 rounded-md shadow-sm"
       />
 
       {/* Typewriter Title */}
-      <h1 className="text-4xl md:text-5xl font-bold text-[#3b2f2f] mb-4 tracking-wide whitespace-nowrap">
+      <h1 className="text-4xl md:text-5xl font-bold text-[#3e2e1e] mb-4 tracking-wide whitespace-nowrap">
         {typedText}
         <span
           className={`inline-block w-[1ch] ${
@@ -64,47 +75,61 @@ export default function LandingPage() {
       {/* Subheading */}
       <motion.p
         className="text-md md:text-lg text-[#5a4e3c] mb-8 max-w-xl leading-relaxed"
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.6 }}
+        transition={{ delay: 0.5, duration: 0.7 }}
       >
-        Where your thoughts flow like ink. A distraction-free space for writing
-        and reflection — with the charm of old paper.
+        A quiet space to think, write, and reflect — like journaling on paper,
+        but with the rhythm of modern life.
       </motion.p>
 
-      {/* Random Quote */}
+      {/* Quote */}
       <motion.p
-        className="italic text-[#7c6f5b] text-sm md:text-base mb-4"
+        className="italic text-[#7c6f5b] text-sm md:text-base mb-4 max-w-md"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.7, duration: 0.8 }}
+        transition={{ delay: 1.2, duration: 1.2 }}
       >
         {randomQuote}
       </motion.p>
 
-      <Separator className="w-32 border-[#ccc5b9] mb-8" />
+      <Separator className="w-32 border-[#d8cfc2] mb-8" />
 
       {/* CTA Buttons */}
       <motion.div
         className="flex gap-4"
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
+        transition={{ delay: 1.5, duration: 0.6 }}
       >
         <Button
           onClick={() => navigate("/login")}
-          className="bg-[#6f4e37] hover:bg-[#5a3c2b] text-white rounded-full px-6 transition-all duration-200"
+          className="bg-[#6f4e37] hover:bg-[#5a3c2b] text-white rounded-full px-6 text-base shadow-sm transition-all duration-200"
         >
           Log In
         </Button>
         <Button
           variant="outline"
           onClick={() => navigate("/signup")}
-          className="border-[#6f4e37] text-[#6f4e37] hover:bg-[#ede8dd] rounded-full px-6 transition-all duration-200"
+          className="border-[#6f4e37] text-[#6f4e37] hover:bg-[#f1ece4] rounded-full px-6 text-base transition-all duration-200"
         >
           Sign Up
         </Button>
       </motion.div>
+
+      {/* Cursor Animation */}
+      <style>
+        {`
+          @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0; }
+          }
+
+          .animate-blink {
+            animation: blink 1s step-end infinite;
+          }
+        `}
+      </style>
     </div>
   );
 }
