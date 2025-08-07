@@ -10,10 +10,22 @@ export default function NotFound() {
 
   useEffect(() => {
     if (index < fullText.length) {
+      const char = fullText.charAt(index);
+
+      // variable delay per character
+      const isPunctuation = /[.,]/.test(char);
+      const isEllipsis = fullText.slice(index, index + 3) === "...";
+      const delay = isEllipsis
+        ? 500
+        : isPunctuation
+        ? 200
+        : 40 + Math.random() * 120; // slight jitter
+
       const timeout = setTimeout(() => {
-        setTyped((prev) => prev + fullText.charAt(index));
+        setTyped((prev) => prev + char);
         setIndex(index + 1);
-      }, 80); // adjust typing speed here
+      }, delay);
+
       return () => clearTimeout(timeout);
     }
   }, [index]);
@@ -26,7 +38,7 @@ export default function NotFound() {
         Lost in your thoughts?
       </h1>
 
-      <p className="max-w-md text-muted-foreground text-lg font-mono min-h-[3rem]">
+      <p className="max-w-md text-muted-foreground text-lg font-mono min-h-[3rem] whitespace-pre-wrap">
         {typed}
         {index < fullText.length && <span className="animate-blink">|</span>}
       </p>
