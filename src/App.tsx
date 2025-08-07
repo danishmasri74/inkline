@@ -9,6 +9,7 @@ import SignUp from "./pages/Auth/SignUp";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import NotesPage from "./pages/Dashboard/NotesPage";
 import LandingPage from "./pages/LandingPage";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -68,10 +69,7 @@ export default function App() {
           !session ? <LandingPage /> : <Navigate to="/dashboard" replace />
         }
       />
-      <Route
-        path="*"
-        element={<Navigate to={session ? "/dashboard" : "/"} replace />}
-      />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
