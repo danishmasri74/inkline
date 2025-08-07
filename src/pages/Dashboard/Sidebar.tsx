@@ -88,7 +88,7 @@ export default function Sidebar({
       : "bg-primary";
 
   return (
-    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 shadow-lg">
+    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50">
       {/* Header */}
       <div
         role="button"
