@@ -18,9 +18,11 @@ export default function ResetPassword() {
     if (index < fullTitle.length) {
       const char = fullTitle[index];
       const delay =
-        char === " " ? 50 :
-        [",", "."].includes(char) ? 300 :
-        60 + Math.random() * 100;
+        char === " "
+          ? 50
+          : [",", "."].includes(char)
+          ? 300
+          : 60 + Math.random() * 100;
 
       const timeout = setTimeout(() => {
         setTypedTitle((prev) => prev + char);
@@ -46,24 +48,22 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center px-4 py-8 sm:px-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="max-w-md w-full p-6 rounded-md bg-[#fffefc] border border-[#e0ddd5] shadow-sm font-typewriter text-[#3b2f2f] relative overflow-hidden"
+        className="w-full max-w-sm sm:max-w-md p-5 sm:p-6 rounded-md bg-[#fffefc] border border-[#e0ddd5] shadow-sm font-typewriter text-[#3b2f2f] relative overflow-hidden"
       >
-        {/* Gently animated title */}
-        <h1 className="text-2xl font-semibold mb-2 text-center tracking-wide whitespace-nowrap relative">
-          <span className={`inline-block ${finished ? "glow-text" : ""}`}>
-            {typedTitle}
-          </span>
+        {/* Animated Title */}
+        <h1 className="text-xl sm:text-2xl font-semibold mb-3 text-center tracking-wide break-words relative">
+          <span className={finished ? "glow-text" : ""}>{typedTitle}</span>
           <span className="inline-block w-[1ch] animate-blink">|</span>
         </h1>
 
-        {/* Reassuring subtitle */}
+        {/* Soft subtitle */}
         <motion.p
-          className="text-sm text-[#7a6b59] text-center mb-6 italic"
+          className="text-sm text-[#7a6b59] text-center mb-5 italic"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.6 }}
@@ -82,7 +82,7 @@ export default function ResetPassword() {
         <Button
           onClick={handleReset}
           disabled={loading}
-          className="w-full mt-4 bg-[#6f4e37] hover:bg-[#5a3c2b] text-white rounded-full"
+          className="w-full mt-4 bg-[#6f4e37] hover:bg-[#5a3c2b] text-white rounded-full py-2.5 text-base"
         >
           {loading ? "Sending..." : "Send Reset Email"}
         </Button>
@@ -100,42 +100,42 @@ export default function ResetPassword() {
           </p>
         </div>
 
-        {/* Subtle texture flicker */}
+        {/* Ambient flicker */}
         <div className="absolute inset-0 pointer-events-none z-0 animate-paper-warm" />
 
         <style>
           {`
-            @keyframes blink {
-              0%, 50%, 100% { opacity: 1; }
-              25%, 75% { opacity: 0; }
-            }
-            .animate-blink {
-              animation: blink 1s step-end infinite;
-            }
+        @keyframes blink {
+          0%, 50%, 100% { opacity: 1; }
+          25%, 75% { opacity: 0; }
+        }
+        .animate-blink {
+          animation: blink 1s step-end infinite;
+        }
 
-            @keyframes glow {
-              0%, 100% {
-                text-shadow: 0 0 0px rgba(111, 78, 55, 0.3);
-              }
-              50% {
-                text-shadow: 0 0 5px rgba(111, 78, 55, 0.5);
-              }
-            }
-            .glow-text {
-              animation: glow 3s ease-in-out infinite;
-            }
+        @keyframes glow {
+          0%, 100% {
+            text-shadow: 0 0 0px rgba(111, 78, 55, 0.3);
+          }
+          50% {
+            text-shadow: 0 0 5px rgba(111, 78, 55, 0.5);
+          }
+        }
+        .glow-text {
+          animation: glow 3s ease-in-out infinite;
+        }
 
-            @keyframes paperWarmth {
-              0%, 100% { background-color: transparent; }
-              50% { background-color: rgba(255, 249, 238, 0.02); }
-            }
-            .animate-paper-warm {
-              animation: paperWarmth 8s ease-in-out infinite;
-              background-image: radial-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
-              background-size: 4px 4px;
-              border-radius: inherit;
-            }
-          `}
+        @keyframes paperWarmth {
+          0%, 100% { background-color: transparent; }
+          50% { background-color: rgba(255, 249, 238, 0.02); }
+        }
+        .animate-paper-warm {
+          animation: paperWarmth 8s ease-in-out infinite;
+          background-image: radial-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
+          background-size: 4px 4px;
+          border-radius: inherit;
+        }
+      `}
         </style>
       </motion.div>
     </div>

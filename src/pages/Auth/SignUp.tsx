@@ -20,7 +20,8 @@ export default function SignUp() {
     if (index < fullTitle.length) {
       const char = fullTitle[index];
       const isPunctuation = /[.,]/.test(char);
-      const delay = char === " " ? 50 : isPunctuation ? 250 : 60 + Math.random() * 90;
+      const delay =
+        char === " " ? 50 : isPunctuation ? 250 : 60 + Math.random() * 90;
 
       const timeout = setTimeout(() => {
         setTypedTitle((prev) => prev + char);
@@ -46,20 +47,20 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center px-4 py-8 sm:px-6">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="max-w-md w-full p-6 rounded-lg bg-[#fffefc] border border-[#e0ddd5] shadow-sm font-typewriter text-[#3b2f2f] relative overflow-hidden"
+        className="w-full max-w-sm sm:max-w-md p-5 sm:p-6 rounded-lg bg-[#fffefc] border border-[#e0ddd5] shadow-sm font-typewriter text-[#3b2f2f] relative overflow-hidden"
       >
-        <h1 className="text-2xl font-semibold mb-4 text-center tracking-wide whitespace-nowrap relative">
+        <h1 className="text-xl sm:text-2xl font-semibold mb-4 text-center tracking-wide break-words">
           <span className={doneTyping ? "glow-title" : ""}>{typedTitle}</span>
           <span className="inline-block w-[1ch] animate-blink">|</span>
         </h1>
 
         <motion.p
-          className="text-sm text-[#7c6f5b] text-center mb-6 italic"
+          className="text-sm text-[#7c6f5b] text-center mb-5 italic"
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.6 }}
@@ -87,7 +88,7 @@ export default function SignUp() {
           <Button
             onClick={handleSignUp}
             disabled={loading}
-            className="w-full mt-2 bg-[#6f4e37] hover:bg-[#5a3c2b] text-white rounded-full"
+            className="w-full mt-2 bg-[#6f4e37] hover:bg-[#5a3c2b] text-white rounded-full py-2.5 text-base"
           >
             {loading ? "Signing up..." : "Sign Up"}
           </Button>
@@ -107,39 +108,37 @@ export default function SignUp() {
           </p>
         </div>
 
-        {/* Warm ambient grain */}
         <div className="absolute inset-0 pointer-events-none z-0 animate-page-breathe" />
 
-        {/* Custom styles */}
         <style>
           {`
-            @keyframes blink {
-              0%, 50%, 100% { opacity: 1; }
-              25%, 75% { opacity: 0; }
-            }
-            .animate-blink {
-              animation: blink 1s step-end infinite;
-            }
+        @keyframes blink {
+          0%, 50%, 100% { opacity: 1; }
+          25%, 75% { opacity: 0; }
+        }
+        .animate-blink {
+          animation: blink 1s step-end infinite;
+        }
 
-            @keyframes glow {
-              0%, 100% { text-shadow: 0 0 0 rgba(111, 78, 55, 0.3); }
-              50% { text-shadow: 0 0 6px rgba(111, 78, 55, 0.5); }
-            }
-            .glow-title {
-              animation: glow 3s ease-in-out infinite;
-            }
+        @keyframes glow {
+          0%, 100% { text-shadow: 0 0 0 rgba(111, 78, 55, 0.3); }
+          50% { text-shadow: 0 0 6px rgba(111, 78, 55, 0.5); }
+        }
+        .glow-title {
+          animation: glow 3s ease-in-out infinite;
+        }
 
-            @keyframes breathe {
-              0%, 100% { background-color: transparent; }
-              50% { background-color: rgba(255, 250, 240, 0.02); }
-            }
-            .animate-page-breathe {
-              animation: breathe 12s ease-in-out infinite;
-              background-image: radial-gradient(rgba(0,0,0,0.015) 1px, transparent 1px);
-              background-size: 4px 4px;
-              border-radius: inherit;
-            }
-          `}
+        @keyframes breathe {
+          0%, 100% { background-color: transparent; }
+          50% { background-color: rgba(255, 250, 240, 0.02); }
+        }
+        .animate-page-breathe {
+          animation: breathe 12s ease-in-out infinite;
+          background-image: radial-gradient(rgba(0,0,0,0.015) 1px, transparent 1px);
+          background-size: 4px 4px;
+          border-radius: inherit;
+        }
+      `}
         </style>
       </motion.div>
     </div>

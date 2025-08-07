@@ -19,7 +19,8 @@ export default function Login() {
     if (charIndex < fullTitle.length) {
       const char = fullTitle[charIndex];
       const isPauseChar = /[,.]/.test(char);
-      const delay = char === " " ? 50 : isPauseChar ? 250 : 60 + Math.random() * 90;
+      const delay =
+        char === " " ? 50 : isPauseChar ? 250 : 60 + Math.random() * 90;
 
       const timeout = setTimeout(() => {
         setTypedTitle((prev) => prev + char);
@@ -35,27 +36,31 @@ export default function Login() {
 
   const handleLogin = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) alert(error.message);
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center px-4 py-10 sm:py-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-md p-8 rounded-lg border border-[#d7d2c4] shadow-md bg-[#fffefb] font-typewriter text-[#3b2f2f] relative overflow-hidden"
+        className="w-full max-w-md p-6 sm:p-8 rounded-lg border border-[#d7d2c4] shadow-md bg-[#fffefb] font-typewriter text-[#3b2f2f] relative overflow-hidden"
       >
-        <h1 className="text-3xl font-bold mb-3 text-center tracking-wide whitespace-nowrap relative">
+        {/* Title */}
+        <h1 className="text-2xl sm:text-3xl font-bold mb-3 text-center tracking-wide relative leading-tight">
           <span className={finished ? "glow-text" : ""}>{typedTitle}</span>
           <span className="inline-block w-[1ch] animate-blink">|</span>
         </h1>
 
-        {/* Emotional re-entry message */}
+        {/* Emotional message */}
         <motion.p
-          className="text-sm text-[#7a6b59] text-center mb-6 italic"
+          className="text-sm sm:text-base text-[#7a6b59] text-center mb-6 italic leading-relaxed px-2"
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.7 }}
@@ -63,32 +68,34 @@ export default function Login() {
           Welcome back. Let’s pick up where you left off, shall we?
         </motion.p>
 
+        {/* Form */}
         <div className="space-y-4">
           <Input
             placeholder="Email address"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-[#fdfaf6] border border-[#d7d2c4] focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="bg-[#fdfaf6] border border-[#d7d2c4] focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
           />
           <Input
             placeholder="Password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="bg-[#fdfaf6] border border-[#d7d2c4] focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="bg-[#fdfaf6] border border-[#d7d2c4] focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
           />
 
           <Button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full bg-[#6f4e37] hover:bg-[#5a3c2b] text-white rounded-full transition"
+            className="w-full bg-[#6f4e37] hover:bg-[#5a3c2b] text-white rounded-full transition text-sm py-2.5"
           >
             {loading ? "Logging in..." : "Log In"}
           </Button>
         </div>
 
-        <div className="mt-6 text-sm text-center text-[#6c5c4c] space-y-1">
+        {/* Links */}
+        <div className="mt-6 text-xs sm:text-sm text-center text-[#6c5c4c] space-y-1">
           <p>
             No account?{" "}
             <Link to="/signup" className="underline underline-offset-2">
@@ -107,39 +114,39 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Flicker background warmth */}
+        {/* Background flicker effect */}
         <div className="absolute inset-0 pointer-events-none z-0 animate-paper-warm" />
 
         {/* Styles */}
         <style>
           {`
-            @keyframes blink {
-              0%, 50%, 100% { opacity: 1; }
-              25%, 75% { opacity: 0; }
-            }
-            .animate-blink {
-              animation: blink 1s step-end infinite;
-            }
+          @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0; }
+          }
+          .animate-blink {
+            animation: blink 1s step-end infinite;
+          }
 
-            @keyframes glow {
-              0%, 100% { text-shadow: 0 0 0px rgba(111, 78, 55, 0.3); }
-              50% { text-shadow: 0 0 6px rgba(111, 78, 55, 0.5); }
-            }
-            .glow-text {
-              animation: glow 3s ease-in-out infinite;
-            }
+          @keyframes glow {
+            0%, 100% { text-shadow: 0 0 0px rgba(111, 78, 55, 0.3); }
+            50% { text-shadow: 0 0 6px rgba(111, 78, 55, 0.5); }
+          }
+          .glow-text {
+            animation: glow 3s ease-in-out infinite;
+          }
 
-            @keyframes paperWarmth {
-              0%, 100% { background-color: transparent; }
-              50% { background-color: rgba(255, 249, 238, 0.015); }
-            }
-            .animate-paper-warm {
-              animation: paperWarmth 10s ease-in-out infinite;
-              background-image: radial-gradient(rgba(0,0,0,0.015) 1px, transparent 1px);
-              background-size: 4px 4px;
-              border-radius: inherit;
-            }
-          `}
+          @keyframes paperWarmth {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: rgba(255, 249, 238, 0.015); }
+          }
+          .animate-paper-warm {
+            animation: paperWarmth 10s ease-in-out infinite;
+            background-image: radial-gradient(rgba(0,0,0,0.015) 1px, transparent 1px);
+            background-size: 4px 4px;
+            border-radius: inherit;
+          }
+        `}
         </style>
       </motion.div>
     </div>
