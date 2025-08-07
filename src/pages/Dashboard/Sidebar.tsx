@@ -20,8 +20,6 @@ type SidebarProps = {
   onCreateNote?: () => void;
 };
 
-const getInitial = (email: string) => email?.charAt(0)?.toUpperCase() ?? "?";
-
 const sidebarQuotes = [
   "“Ink remembers when we do not.”",
   "“Let your thoughts spill freely, the page is patient.”",
@@ -29,6 +27,8 @@ const sidebarQuotes = [
   "“A day forgotten is a line unwritten.”",
   "“Every note a whisper of your mind.”",
 ];
+
+const getInitial = (email: string) => email?.charAt(0)?.toUpperCase() ?? "?";
 
 export default function Sidebar({
   notes,
@@ -39,10 +39,10 @@ export default function Sidebar({
   userEmail,
   onClose,
   onDeselect,
-  onCreateNote,
 }: SidebarProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // ─── Categorize Notes ─────────────────────────────
   const { todayNotes, yesterdayNotes, olderNotes } = useMemo(() => {
     const today: Note[] = [];
     const yesterday: Note[] = [];
@@ -58,6 +58,7 @@ export default function Sidebar({
     return { todayNotes: today, yesterdayNotes: yesterday, olderNotes: older };
   }, [notes]);
 
+  // ─── Structured Sections ──────────────────────────
   const sections = useMemo(() => {
     const data = [];
     if (todayNotes.length) data.push({ label: "Today", notes: todayNotes });
@@ -67,6 +68,7 @@ export default function Sidebar({
     return data;
   }, [todayNotes, yesterdayNotes, olderNotes]);
 
+  // ─── Flattened List for Virtualizer ───────────────
   const flatList = useMemo(() => {
     const list: {
       type: "section" | "note";
@@ -74,16 +76,16 @@ export default function Sidebar({
       note?: Note;
       noteCount?: number;
     }[] = [];
+
     for (const section of sections) {
       list.push({
         type: "section",
         label: section.label,
         noteCount: section.notes.length,
       });
-      for (const note of section.notes) {
-        list.push({ type: "note", note });
-      }
+      section.notes.forEach((note) => list.push({ type: "note", note }));
     }
+
     return list;
   }, [sections]);
 
@@ -94,6 +96,7 @@ export default function Sidebar({
     overscan: 10,
   });
 
+  // ─── Progress Bar ────────────────────────────────
   const noteLimit = 100;
   const noteCount = notes.length;
   const progress = Math.min((noteCount / noteLimit) * 100, 100);
@@ -110,7 +113,7 @@ export default function Sidebar({
 
   return (
     <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 md:fixed md:left-0 md:top-0">
-      {/* Header */}
+      {/* ─── Header ─────────────────────────────────── */}
       <div
         role="button"
         tabIndex={0}
@@ -150,27 +153,25 @@ export default function Sidebar({
 
       <Separator />
 
-      {/* Scrollable Virtualized List */}
+      {/* ─── Note List ─────────────────────────────── */}
       <div
         ref={parentRef}
-        className="flex-1 relative overflow-y-auto custom-scrollbar"
+        className="flex-1 overflow-y-auto relative custom-scrollbar"
       >
         <div
-          style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
-          }}
+          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
           className="relative w-full"
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const item = flatList[virtualRow.index];
+            const top = virtualRow.start;
+
             return (
               <div
                 key={virtualRow.key}
                 ref={rowVirtualizer.measureElement}
                 className="absolute top-0 left-0 right-0"
-                style={{
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
+                style={{ transform: `translateY(${top}px)` }}
               >
                 {item.type === "section" ? (
                   <motion.h3
@@ -182,11 +183,9 @@ export default function Sidebar({
                     }}
                     className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground bg-background/80 backdrop-blur border-b border-border flex items-center gap-2"
                   >
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
                     <span className="flex-1 truncate">{item.label}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {item.noteCount}
-                    </span>
+                    <span className="text-[10px]">{item.noteCount}</span>
                   </motion.h3>
                 ) : (
                   <motion.div
@@ -218,7 +217,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Footer */}
+      {/* ─── Footer ─────────────────────────────────── */}
       <div className="shrink-0 bg-muted/40 rounded-t-md">
         <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
           <span>Notes</span>
@@ -226,18 +225,21 @@ export default function Sidebar({
             {noteCount} / {noteLimit}
           </span>
         </div>
+
         <div className="px-4 pb-2">
           <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
             <div
               className={`h-full ${progressColor} transition-all duration-300`}
               style={{ width: `${progress}%` }}
-            ></div>
+            />
           </div>
           {progress >= 100 && (
             <p className="text-destructive text-xs mt-1">Note limit reached.</p>
           )}
         </div>
+
         <Separator />
+
         <div className="px-4 py-3 flex items-center gap-3">
           <Avatar className="h-9 w-9 border">
             <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
@@ -254,14 +256,13 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Whispered Quote */}
         <p className="text-[10px] italic text-muted-foreground text-center px-4 pb-2 mt-1">
           {randomQuote}
           <span className="animate-blink ml-1">|</span>
         </p>
       </div>
 
-      {/* Blinking Cursor Style */}
+      {/* ─── Blinking Cursor Animation ─────────────── */}
       <style>
         {`
           @keyframes blink {
@@ -279,6 +280,7 @@ export default function Sidebar({
   );
 }
 
+// ─── Icon ───────────────────────────────────────────
 function XIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
