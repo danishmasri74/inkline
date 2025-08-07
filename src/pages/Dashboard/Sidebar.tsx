@@ -97,12 +97,12 @@ export default function Sidebar({
         onKeyDown={(e) =>
           (e.key === "Enter" || e.key === " ") && onDeselect?.()
         }
-        className="cursor-pointer p-4 flex items-center gap-3 shrink-0 hover:bg-muted/80 transition rounded-b-md"
+        className="cursor-pointer p-5 flex items-center gap-3 shrink-0 hover:bg-muted/80 transition rounded-b-md shadow-sm"
       >
         <img
           src={inklineIcon}
           alt="InkLine Logo"
-          className="h-12 w-12 rounded-md"
+          className="h-14 w-14 rounded-lg"
         />
         <div className="flex flex-col">
           <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
@@ -117,7 +117,7 @@ export default function Sidebar({
               onClose();
             }}
             aria-label="Close sidebar"
-            className="ml-auto md:hidden hover:bg-accent"
+            className="ml-auto md:hidden hover:bg-accent rounded-full"
           >
             <XIcon className="h-5 w-5" />
           </Button>
@@ -126,15 +126,13 @@ export default function Sidebar({
 
       <Separator />
 
-      {/* Scrollable Virtualized List */}
+      {/* Scrollable List */}
       <div
         ref={parentRef}
         className="flex-1 relative overflow-y-auto custom-scrollbar"
       >
         <div
-          style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
-          }}
+          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
           className="relative w-full"
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -144,12 +142,10 @@ export default function Sidebar({
                 key={virtualRow.key}
                 ref={rowVirtualizer.measureElement}
                 className="absolute top-0 left-0 right-0"
-                style={{
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
                 {item.type === "section" ? (
-                  <h3 className="sticky top-0 z-10 text-xs font-medium bg-background text-muted-foreground px-3 py-2 uppercase tracking-wide backdrop-blur-sm">
+                  <h3 className="sticky top-0 z-10 text-xs font-semibold bg-background/80 text-muted-foreground px-4 py-2 uppercase tracking-wider backdrop-blur-md">
                     {item.label}
                   </h3>
                 ) : (
@@ -157,8 +153,10 @@ export default function Sidebar({
                     variant={
                       item.note!.id === selectedId ? "secondary" : "ghost"
                     }
-                    className={`w-full justify-start px-3 py-2 rounded-md truncate transition hover:bg-accent ${
-                      item.note!.id === selectedId ? "font-semibold" : ""
+                    className={`w-full justify-start px-4 py-2 rounded-lg truncate transition text-sm hover:bg-accent ${
+                      item.note!.id === selectedId
+                        ? "font-semibold bg-accent/60 shadow-sm"
+                        : ""
                     }`}
                     onClick={() => onSelect(item.note!.id)}
                   >
@@ -174,17 +172,18 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 bg-muted/40 rounded-t-md">
-        <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
+      <div className="shrink-0 bg-muted/40 rounded-t-xl relative">
+        <div className="absolute -top-4 left-0 right-0 h-4 bg-gradient-to-b from-muted/60 to-transparent pointer-events-none"></div>
+        <div className="px-5 py-2 text-xs text-muted-foreground flex items-center justify-between">
           <span>Notes</span>
           <span>
             {noteCount} / {noteLimit}
           </span>
         </div>
-        <div className="px-4 pb-2">
-          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+        <div className="px-5 pb-2">
+          <div className="w-full bg-muted h-3 rounded-full overflow-hidden">
             <div
-              className={`h-full ${progressColor} transition-all duration-300`}
+              className={`h-full ${progressColor} transition-all duration-300 rounded-full`}
               style={{ width: `${progress}%` }}
             ></div>
           </div>
@@ -193,8 +192,8 @@ export default function Sidebar({
           )}
         </div>
         <Separator />
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Avatar className="h-9 w-9 border">
+        <div className="px-5 py-4 flex items-center gap-3">
+          <Avatar className="h-10 w-10 border ring-2 ring-primary/50">
             <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col overflow-hidden">
