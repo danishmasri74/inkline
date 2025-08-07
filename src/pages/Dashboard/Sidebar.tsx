@@ -149,7 +149,7 @@ export default function Sidebar({
                 }}
               >
                 {item.type === "section" ? (
-                  <h3 className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground bg-background backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                  <h3 className="sticky top-0 z-10 px-3 py-2 text-xs font-semibold text-muted-foreground bg-background/80 backdrop-blur border-b border-border">
                     {item.label}
                   </h3>
                 ) : (
