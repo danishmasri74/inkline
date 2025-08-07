@@ -88,109 +88,128 @@ export default function Sidebar({
       : "bg-primary";
 
   return (
-<aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50">
-
-  {/* Header */}
-  <div
-    role="button"
-    tabIndex={0}
-    onClick={onDeselect}
-    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onDeselect?.()}
-    className="cursor-pointer p-5 flex items-center gap-3 shrink-0 hover:bg-muted/80 transition rounded-b-md shadow-sm"
-  >
-    <img src={inklineIcon} alt="InkLine Logo" className="h-14 w-14 rounded-lg" />
-    <div className="flex flex-col">
-      <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
-      <p className="text-xs text-muted-foreground">No fuss. Just notes.</p>
-    </div>
-    {onClose && (
-      <Button
-        size="icon"
-        variant="ghost"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-        aria-label="Close sidebar"
-        className="ml-auto md:hidden hover:bg-accent rounded-full"
+    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50">
+      {/* Header */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onDeselect}
+        onKeyDown={(e) =>
+          (e.key === "Enter" || e.key === " ") && onDeselect?.()
+        }
+        className="cursor-pointer p-4 flex items-center gap-3 shrink-0 hover:bg-muted/80 transition rounded-b-md"
       >
-        <XIcon className="h-5 w-5" />
-      </Button>
-    )}
-  </div>
-
-  <Separator />
-
-  {/* Scrollable List */}
-  <div ref={parentRef} className="flex-1 relative overflow-y-auto custom-scrollbar">
-    <div style={{ height: `${rowVirtualizer.getTotalSize()}px` }} className="relative w-full">
-      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-        const item = flatList[virtualRow.index];
-        return (
-          <div
-            key={virtualRow.key}
-            ref={rowVirtualizer.measureElement}
-            className="absolute top-0 left-0 right-0"
-            style={{ transform: `translateY(${virtualRow.start}px)` }}
+        <img
+          src={inklineIcon}
+          alt="InkLine Logo"
+          className="h-12 w-12 rounded-md"
+        />
+        <div className="flex flex-col">
+          <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
+          <p className="text-xs text-muted-foreground">No fuss. Just notes.</p>
+        </div>
+        {onClose && (
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            aria-label="Close sidebar"
+            className="ml-auto md:hidden hover:bg-accent"
           >
-            {item.type === "section" ? (
-              <h3 className="sticky top-0 z-10 text-xs font-semibold bg-background/80 text-muted-foreground px-4 py-2 uppercase tracking-wider backdrop-blur-md">
-                {item.label}
-              </h3>
-            ) : (
-              <Button
-                variant={item.note!.id === selectedId ? "secondary" : "ghost"}
-                className={`w-full justify-start px-4 py-2 rounded-lg truncate transition text-sm hover:bg-accent ${
-                  item.note!.id === selectedId ? "font-semibold bg-accent/60 shadow-sm" : ""
-                }`}
-                onClick={() => onSelect(item.note!.id)}
-              >
-                <span className="truncate">{item.note!.title || "Untitled"}</span>
-              </Button>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  </div>
+            <XIcon className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
 
-  {/* Footer */}
-  <div className="shrink-0 bg-muted/40 rounded-t-xl relative">
-    <div className="absolute -top-4 left-0 right-0 h-4 bg-gradient-to-b from-muted/60 to-transparent pointer-events-none"></div>
-    <div className="px-5 py-2 text-xs text-muted-foreground flex items-center justify-between">
-      <span>Notes</span>
-      <span>{noteCount} / {noteLimit}</span>
-    </div>
-    <div className="px-5 pb-2">
-      <div className="w-full bg-muted h-3 rounded-full overflow-hidden">
+      <Separator />
+
+      {/* Scrollable Virtualized List */}
+      <div
+        ref={parentRef}
+        className="flex-1 relative overflow-y-auto custom-scrollbar"
+      >
         <div
-          className={`h-full ${progressColor} transition-all duration-300 rounded-full`}
-          style={{ width: `${progress}%` }}
-        ></div>
-      </div>
-      {progress >= 100 && (
-        <p className="text-destructive text-xs mt-1">Note limit reached.</p>
-      )}
-    </div>
-    <Separator />
-    <div className="px-5 py-4 flex items-center gap-3">
-      <Avatar className="h-10 w-10 border ring-2 ring-primary/50">
-        <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
-      </Avatar>
-      <div className="flex flex-col overflow-hidden">
-        <span className="text-sm font-medium truncate">{userEmail}</span>
-        <Button
-          variant="link"
-          className="text-xs text-muted-foreground px-0 h-auto hover:underline"
-          onClick={onLogout}
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+          }}
+          className="relative w-full"
         >
-          Log out
-        </Button>
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const item = flatList[virtualRow.index];
+            return (
+              <div
+                key={virtualRow.key}
+                ref={rowVirtualizer.measureElement}
+                className="absolute top-0 left-0 right-0"
+                style={{
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                {item.type === "section" ? (
+                  <h3 className="sticky top-0 z-10 text-xs font-medium bg-background text-muted-foreground px-3 py-2 uppercase tracking-wide backdrop-blur-sm">
+                    {item.label}
+                  </h3>
+                ) : (
+                  <Button
+                    variant={
+                      item.note!.id === selectedId ? "secondary" : "ghost"
+                    }
+                    className={`w-full justify-start px-3 py-2 rounded-md truncate transition hover:bg-accent ${
+                      item.note!.id === selectedId ? "font-semibold" : ""
+                    }`}
+                    onClick={() => onSelect(item.note!.id)}
+                  >
+                    <span className="truncate">
+                      {item.note!.title || "Untitled"}
+                    </span>
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  </div>
-</aside>
 
+      {/* Footer */}
+      <div className="shrink-0 bg-muted/40 rounded-t-md">
+        <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
+          <span>Notes</span>
+          <span>
+            {noteCount} / {noteLimit}
+          </span>
+        </div>
+        <div className="px-4 pb-2">
+          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+            <div
+              className={`h-full ${progressColor} transition-all duration-300`}
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          {progress >= 100 && (
+            <p className="text-destructive text-xs mt-1">Note limit reached.</p>
+          )}
+        </div>
+        <Separator />
+        <div className="px-4 py-3 flex items-center gap-3">
+          <Avatar className="h-9 w-9 border">
+            <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-sm font-medium truncate">{userEmail}</span>
+            <Button
+              variant="link"
+              className="text-xs text-muted-foreground px-0 h-auto hover:underline"
+              onClick={onLogout}
+            >
+              Log out
+            </Button>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 }
 
