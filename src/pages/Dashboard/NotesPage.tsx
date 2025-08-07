@@ -19,8 +19,12 @@ export default function NotesPage({ session }: { session: Session }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>([]);
-  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(() => () => {});
+  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>(
+    []
+  );
+  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(
+    () => () => {}
+  );
 
   const noteEditorRef = useRef<{
     focusNextLine: () => void;
@@ -120,7 +124,8 @@ export default function NotesPage({ session }: { session: Session }) {
       .in("id", selectedTableNoteIds)
       .eq("user_id", userId);
 
-    if (error) return console.error("Error deleting selected notes:", error.message);
+    if (error)
+      return console.error("Error deleting selected notes:", error.message);
 
     setNotes((prev) =>
       prev.filter((note) => !selectedTableNoteIds.includes(note.id))
@@ -178,7 +183,7 @@ export default function NotesPage({ session }: { session: Session }) {
         />
       </div>
 
-      <div className="flex-1 p-4 md:p-6 relative">
+      <div className="flex-1 p-4 md:p-6 relative md:ml-64">
         <div className="md:hidden mb-4 flex justify-between items-center">
           <Button
             variant="ghost"
