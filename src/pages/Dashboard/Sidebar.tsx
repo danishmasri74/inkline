@@ -20,14 +20,6 @@ type SidebarProps = {
   onCreateNote?: () => void;
 };
 
-const sidebarQuotes = [
-  "“Ink remembers when we do not.”",
-  "“Let your thoughts spill freely, the page is patient.”",
-  "“One note at a time, your voice unfolds.”",
-  "“A day forgotten is a line unwritten.”",
-  "“Every note a whisper of your mind.”",
-];
-
 const getInitial = (email: string) => email?.charAt(0)?.toUpperCase() ?? "?";
 
 export default function Sidebar({
@@ -58,7 +50,6 @@ export default function Sidebar({
     return { todayNotes: today, yesterdayNotes: yesterday, olderNotes: older };
   }, [notes]);
 
-  // ─── Structured Sections ──────────────────────────
   const sections = useMemo(() => {
     const data = [];
     if (todayNotes.length) data.push({ label: "Today", notes: todayNotes });
@@ -68,7 +59,6 @@ export default function Sidebar({
     return data;
   }, [todayNotes, yesterdayNotes, olderNotes]);
 
-  // ─── Flattened List for Virtualizer ───────────────
   const flatList = useMemo(() => {
     const list: {
       type: "section" | "note";
@@ -96,7 +86,6 @@ export default function Sidebar({
     overscan: 10,
   });
 
-  // ─── Progress Bar ────────────────────────────────
   const noteLimit = 100;
   const noteCount = notes.length;
   const progress = Math.min((noteCount / noteLimit) * 100, 100);
@@ -106,10 +95,6 @@ export default function Sidebar({
       : progress >= 80
       ? "bg-yellow-500"
       : "bg-primary";
-
-  const randomQuote = useMemo(() => {
-    return sidebarQuotes[Math.floor(Math.random() * sidebarQuotes.length)];
-  }, []);
 
   return (
     <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 md:fixed md:left-0 md:top-0">
@@ -255,11 +240,6 @@ export default function Sidebar({
             </Button>
           </div>
         </div>
-
-        <p className="text-[10px] italic text-muted-foreground text-center px-4 pb-2 mt-1">
-          {randomQuote}
-          <span className="animate-blink ml-1">|</span>
-        </p>
       </div>
 
       {/* ─── Blinking Cursor Animation ─────────────── */}
