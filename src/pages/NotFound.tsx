@@ -7,19 +7,18 @@ export default function NotFound() {
   const fullText = "Maybe I wrote it down... or maybe...";
   const [typed, setTyped] = useState("");
   const [index, setIndex] = useState(0);
+  const [showFinalCursor, setShowFinalCursor] = useState(false);
 
   useEffect(() => {
     if (index < fullText.length) {
       const char = fullText.charAt(index);
-
-      // variable delay per character
       const isPunctuation = /[.,]/.test(char);
       const isEllipsis = fullText.slice(index, index + 3) === "...";
       const delay = isEllipsis
         ? 500
         : isPunctuation
         ? 200
-        : 40 + Math.random() * 120; // slight jitter
+        : 40 + Math.random() * 120;
 
       const timeout = setTimeout(() => {
         setTyped((prev) => prev + char);
@@ -27,6 +26,13 @@ export default function NotFound() {
       }, delay);
 
       return () => clearTimeout(timeout);
+    } else {
+      // Add a slight pause before re-showing the final blinking cursor
+      const pause = setTimeout(() => {
+        setShowFinalCursor(true);
+      }, 600); // adjust for desired pause length
+
+      return () => clearTimeout(pause);
     }
   }, [index]);
 
@@ -40,7 +46,9 @@ export default function NotFound() {
 
       <p className="max-w-md text-muted-foreground text-lg font-mono min-h-[3rem] whitespace-pre-wrap">
         {typed}
-        {index < fullText.length && <span className="animate-blink">|</span>}
+        {(index < fullText.length || showFinalCursor) && (
+          <span className="animate-blink">|</span>
+        )}
       </p>
 
       <Button asChild variant="default">
