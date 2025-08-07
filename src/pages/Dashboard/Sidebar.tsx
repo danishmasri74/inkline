@@ -59,10 +59,18 @@ export default function Sidebar({
   }, [todayNotes, yesterdayNotes, olderNotes]);
 
   const flatList = useMemo(() => {
-    const list: { type: "section" | "note"; label?: string; note?: Note }[] =
-      [];
+    const list: {
+      type: "section" | "note";
+      label?: string;
+      note?: Note;
+      noteCount?: number;
+    }[] = [];
     for (const section of sections) {
-      list.push({ type: "section", label: section.label });
+      list.push({
+        type: "section",
+        label: section.label,
+        noteCount: section.notes.length,
+      });
       for (const note of section.notes) {
         list.push({ type: "note", note });
       }
@@ -149,8 +157,12 @@ export default function Sidebar({
                 }}
               >
                 {item.type === "section" ? (
-                  <h3 className="sticky top-0 z-10 px-3 py-2 text-xs font-semibold text-muted-foreground bg-background/80 backdrop-blur border-b border-border">
-                    {item.label}
+                  <h3 className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground bg-background/80 backdrop-blur border-b border-border flex items-center gap-2">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+                    <span className="flex-1 truncate">{item.label}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {item.noteCount}
+                    </span>
                   </h3>
                 ) : (
                   <Button
