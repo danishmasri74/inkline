@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -77,32 +77,6 @@ export default function Sidebar({
     overscan: 10,
   });
 
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const virtualItems = rowVirtualizer.getVirtualItems();
-      const currentOffset = rowVirtualizer.scrollOffset ?? 0;
-
-      for (const item of virtualItems) {
-        const data = flatList[item.index];
-        if (data.type === "section" && item.start <= currentOffset + 10) {
-          setActiveSection(data.label || null);
-        }
-      }
-    };
-
-    const scrollEl = parentRef.current;
-    if (scrollEl) {
-      scrollEl.addEventListener("scroll", handleScroll);
-      handleScroll(); // Initial trigger
-    }
-
-    return () => {
-      if (scrollEl) scrollEl.removeEventListener("scroll", handleScroll);
-    };
-  }, [flatList, rowVirtualizer]);
-
   const noteLimit = 100;
   const noteCount = notes.length;
   const progress = Math.min((noteCount / noteLimit) * 100, 100);
@@ -152,13 +126,6 @@ export default function Sidebar({
 
       <Separator />
 
-      {/* Sticky Header Simulation */}
-      {activeSection && (
-        <div className="sticky top-0 z-20 text-sm font-bold text-muted-foreground px-4 py-2 uppercase tracking-widest bg-muted/60 backdrop-blur-md border-l-4 border-primary shadow">
-          {activeSection}
-        </div>
-      )}
-
       {/* Scrollable List */}
       <div
         ref={parentRef}
@@ -182,7 +149,7 @@ export default function Sidebar({
                     {virtualRow.index !== 0 && (
                       <div className="border-t border-muted-foreground/20 mx-4" />
                     )}
-                    <h3 className="text-sm font-bold text-muted-foreground px-4 py-2 uppercase tracking-widest bg-muted/40 border-l-4 border-primary">
+                    <h3 className="sticky top-0 z-10 text-sm font-bold text-muted-foreground px-4 py-2 uppercase tracking-widest bg-muted/60 backdrop-blur-md border-l-4 border-primary">
                       {item.label}
                     </h3>
                   </>
