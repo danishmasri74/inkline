@@ -11,7 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Note } from "@/types/Notes";
 import { supabase } from "@/lib/supabaseClient";
 import { Download, ChevronUp, Plus, Minus, Check, Loader2 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type NoteEditorProps = {
   note: Note | null;
@@ -43,7 +48,9 @@ const NoteEditor = forwardRef(function NoteEditor(
   const [currentLine, setCurrentLine] = useState(0);
   const [fontSize, setFontSize] = useState<FontSizeLevel>("regular");
   const [saving, setSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
+    "idle"
+  );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -164,7 +171,7 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   return (
     <div
-      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide p-6 min-h-[75vh] md:shadow-md transition-all"
+      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide p-6 min-h-[75vh] transition-all"
       style={{
         maxWidth: "85ch",
         margin: "0 auto",
@@ -205,8 +212,12 @@ const NoteEditor = forwardRef(function NoteEditor(
         </div>
 
         <div className="flex items-center gap-3">
-          {saveStatus === "saving" && <Loader2 className="animate-spin w-4 h-4 text-muted-foreground" />}
-          {saveStatus === "saved" && <Check className="w-4 h-4 text-green-500" />}
+          {saveStatus === "saving" && (
+            <Loader2 className="animate-spin w-4 h-4 text-muted-foreground" />
+          )}
+          {saveStatus === "saved" && (
+            <Check className="w-4 h-4 text-green-500" />
+          )}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
