@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Note } from "@/types/Notes";
 import { supabase } from "@/lib/supabaseClient";
+import { Download, ChevronUp, Plus, Minus, Check, Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type NoteEditorProps = {
   note: Note | null;
@@ -40,6 +42,9 @@ const NoteEditor = forwardRef(function NoteEditor(
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [currentLine, setCurrentLine] = useState(0);
   const [fontSize, setFontSize] = useState<FontSizeLevel>("regular");
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -53,6 +58,7 @@ const NoteEditor = forwardRef(function NoteEditor(
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (note && (title !== note.title || body !== note.body)) {
+        setSaveStatus("saving");
         supabase
           .from("notes")
           .update({ title, body })
@@ -64,10 +70,12 @@ const NoteEditor = forwardRef(function NoteEditor(
               console.error("Auto-save failed:", error.message);
             } else if (data) {
               onUpdate(data);
+              setSaveStatus("saved");
+              setTimeout(() => setSaveStatus("idle"), 2000);
             }
           });
       }
-    }, 1000);
+    }, 800);
 
     return () => clearTimeout(timeout);
   }, [title, body, note]);
@@ -156,57 +164,80 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   return (
     <div
-      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide prose max-w-none p-8 min-h-[75vh] md:shadow-md"
+      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide p-6 min-h-[75vh] md:shadow-md transition-all"
       style={{
-        lineHeight: "1.8",
-        letterSpacing: "0.02em",
-        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-        minHeight: "75vh",
         maxWidth: "85ch",
         margin: "0 auto",
       }}
     >
-      {/* Font Size Controls */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={decreaseFontSize}
-            disabled={fontSize === "smallest"}
-          >
-            A-
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={increaseFontSize}
-            disabled={fontSize === "biggest"}
-          >
-            A+
-          </Button>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={decreaseFontSize}
+                  disabled={fontSize === "smallest"}
+                >
+                  <Minus size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Decrease font size</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={increaseFontSize}
+                  disabled={fontSize === "biggest"}
+                >
+                  <Plus size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Increase font size</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={downloadAsTxt}
-          disabled={!note || body.trim() === ""}
-        >
-          Download as .txt
-        </Button>
+        <div className="flex items-center gap-3">
+          {saveStatus === "saving" && <Loader2 className="animate-spin w-4 h-4 text-muted-foreground" />}
+          {saveStatus === "saved" && <Check className="w-4 h-4 text-green-500" />}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadAsTxt}
+                  disabled={!note || body.trim() === ""}
+                  className="flex items-center gap-1"
+                >
+                  <Download size={16} /> .txt
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Download as text file</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
+      {/* Title */}
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
-          transition: "font-size 0.3s ease",
         }}
-        className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground"
+        className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-b border-border focus:border-primary rounded-none p-0 placeholder:text-muted-foreground"
       />
 
+      {/* Body */}
       <Textarea
         ref={textareaRef}
         value={body}
@@ -219,23 +250,30 @@ const NoteEditor = forwardRef(function NoteEditor(
         placeholder="Start typing your note..."
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
-          transition: "font-size 0.3s ease",
         }}
-        className="resize-none bg-transparent border-none p-0 focus:outline-none focus:ring-0 shadow-none placeholder:text-muted-foreground font-typewriter"
+        className="resize-none bg-transparent border-none p-0 focus:outline-none focus:ring-0 placeholder:text-muted-foreground font-typewriter leading-loose"
       />
 
+      {/* Footer */}
       <div className="flex justify-between items-center mt-4">
-        <div className="text-sm text-muted-foreground">
+        <div
+          className={`text-sm ${
+            body.length > MAX_BODY_LENGTH * 0.9
+              ? "text-red-500"
+              : "text-muted-foreground"
+          }`}
+        >
           {body.length} / {MAX_BODY_LENGTH}
         </div>
       </div>
 
+      {/* Scroll to Top Button */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-md hover:bg-primary/90 transition"
+          className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:bg-primary/90 transition-all animate-fade-in"
         >
-          ↑ Top
+          <ChevronUp size={20} />
         </button>
       )}
     </div>
