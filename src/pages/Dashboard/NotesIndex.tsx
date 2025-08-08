@@ -1,6 +1,5 @@
 import { Note } from "@/types/Notes";
-import { useNavigate } from "react-router-dom";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, Search, Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import JSZip from "jszip";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { useNavigate } from "react-router-dom";
 
 type SortKey = "title" | "created_at" | "updated_at";
 type SortDirection = "asc" | "desc";
@@ -44,6 +44,7 @@ export default function NotesIndex({
 
   const navigate = useNavigate();
 
+  // Restore sort config
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -58,6 +59,7 @@ export default function NotesIndex({
     }
   }, []);
 
+  // Save sort config
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sortConfig));
     onSortConfigChange?.(sortConfig);
@@ -85,7 +87,6 @@ export default function NotesIndex({
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
-
       return direction === "asc"
         ? new Date(aValue).getTime() - new Date(bValue).getTime()
         : new Date(bValue).getTime() - new Date(aValue).getTime();
@@ -109,11 +110,9 @@ export default function NotesIndex({
 
   const handleBulkDownload = async () => {
     const selectedNotes = notes.filter((note) => selectedIds.includes(note.id));
-
     if (selectedNotes.length === 0) return;
 
     const zip = new JSZip();
-
     selectedNotes.forEach((note) => {
       const filename = `${note.title?.trim() || "Untitled"}.txt`;
       const content = `Title: ${note.title || "Untitled"}\n\n${
@@ -124,7 +123,6 @@ export default function NotesIndex({
 
     const blob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
     link.href = url;
     link.download = "notes.zip";
@@ -136,54 +134,59 @@ export default function NotesIndex({
 
   const renderHeader = (label: string, key: SortKey) => {
     const isActive = sortConfig.key === key;
-    const icon =
-      isActive && sortConfig.direction === "asc" ? (
-        <ArrowUp className="h-3 w-3 ml-1" />
-      ) : isActive ? (
-        <ArrowDown className="h-3 w-3 ml-1" />
-      ) : null;
-
     return (
       <button
-        className="w-full flex items-center justify-between text-left cursor-pointer select-none"
+        className={`w-full flex items-center justify-between text-left cursor-pointer px-1 py-1 rounded-md hover:bg-muted transition`}
         onClick={() => handleSort(key)}
       >
         <span>{label}</span>
-        {icon}
+        {isActive &&
+          (sortConfig.direction === "asc" ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          ))}
       </button>
     );
   };
 
   return (
     <div className="min-h-screen bg-background px-4 py-6 font-typewriter">
-      <div className="max-w-5xl mx-auto space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+      <div className="max-w-6xl mx-auto space-y-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-2xl font-bold tracking-wide text-foreground">
             📜 All Notes
           </h1>
 
           <div className="flex gap-2 w-full sm:w-auto">
-            <input
-              type="text"
-              placeholder="Search by title..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground w-full sm:w-64 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by title..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
 
             <Button
               variant="outline"
               onClick={handleBulkDownload}
               disabled={selectedIds.length === 0}
+              className="gap-2"
             >
-              Download Selected
+              <Download className="h-4 w-4" />
+              Download {selectedIds.length > 0 && `(${selectedIds.length})`}
             </Button>
           </div>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto border border-border rounded-md">
-          <table className="min-w-full table-auto text-xs text-left">
-            <thead className="bg-muted/40 text-muted-foreground uppercase tracking-wide border-b border-border">
+          <table className="min-w-full table-auto text-sm text-left">
+            <thead className="bg-muted/50 sticky top-0 z-10 text-muted-foreground uppercase tracking-wide border-b border-border">
               <tr>
                 <th className="px-3 py-2 w-10">
                   <input
@@ -206,62 +209,75 @@ export default function NotesIndex({
               </tr>
             </thead>
             <tbody>
-              {filteredSortedNotes.map((note) => {
-                const isSelected = selectedIds.includes(note.id);
-                const previewText =
-                  note.body?.length > 100
-                    ? `${note.body.slice(0, 100).trim()}…`
-                    : note.body || "—";
-
-                return (
-                  <tr
-                    key={note.id}
-                    onClick={() => onSelectNote(note.id)}
-                    className={`cursor-pointer border-b border-border transition-all duration-150 ${
-                      isSelected
-                        ? "bg-accent/20 border-l-4 border-accent"
-                        : "hover:bg-muted/20"
-                    }`}
+              {filteredSortedNotes.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="text-center py-6 text-muted-foreground"
                   >
-                    <td
-                      className="px-3 py-2"
-                      onClick={(e) => e.stopPropagation()}
+                    No notes found.
+                  </td>
+                </tr>
+              ) : (
+                filteredSortedNotes.map((note, index) => {
+                  const isSelected = selectedIds.includes(note.id);
+                  const previewText =
+                    note.body?.length > 100
+                      ? `${note.body.slice(0, 100).trim()}…`
+                      : note.body || "—";
+
+                  return (
+                    <tr
+                      key={note.id}
+                      onClick={() => onSelectNote(note.id)}
+                      className={`cursor-pointer border-b border-border transition-all duration-150 ${
+                        isSelected
+                          ? "bg-accent/20 border-l-4 border-accent"
+                          : index % 2 === 0
+                          ? "bg-background hover:bg-muted/20"
+                          : "bg-muted/10 hover:bg-muted/20"
+                      }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelect(note.id)}
-                        className="form-checkbox accent-ring"
-                      />
-                    </td>
-                    <td className="px-3 py-2 font-medium text-foreground truncate max-w-[160px]">
-                      {note.title || "Untitled"}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground max-w-[280px] truncate">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span>{previewText}</span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs whitespace-pre-wrap">
-                            {note.body || "—"}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                      {note.created_at
-                        ? new Date(note.created_at).toLocaleDateString()
-                        : "—"}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                      {note.updated_at
-                        ? new Date(note.updated_at).toLocaleString()
-                        : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
+                      <td
+                        className="px-3 py-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(note.id)}
+                          className="form-checkbox accent-ring"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-foreground truncate max-w-[180px]">
+                        {note.title || "Untitled"}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground max-w-[300px] truncate">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>{previewText}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs whitespace-pre-wrap">
+                              {note.body || "—"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        {note.created_at
+                          ? new Date(note.created_at).toLocaleDateString()
+                          : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        {note.updated_at
+                          ? new Date(note.updated_at).toLocaleString()
+                          : "—"}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
