@@ -282,7 +282,7 @@ const NoteEditor = forwardRef(function NoteEditor(
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:bg-primary/90 transition-all animate-fade-in"
+          className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground p-3 rounded-full hover:bg-primary/90 transition-all animate-fade-in"
         >
           <ChevronUp size={20} />
         </button>
