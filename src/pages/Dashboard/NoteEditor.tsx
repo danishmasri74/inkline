@@ -245,7 +245,7 @@ const NoteEditor = forwardRef(function NoteEditor(
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
         }}
-        className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-none focus:border-primary rounded-none p-0 placeholder:text-muted-foreground"
+        className="text-3xl shadow-none mb-6 font-bold font-typewriter bg-transparent border-none focus:border-primary rounded-none p-0 placeholder:text-muted-foreground"
       />
 
       {/* Body */}
@@ -262,7 +262,7 @@ const NoteEditor = forwardRef(function NoteEditor(
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
         }}
-        className="resize-none bg-transparent border-none p-0 focus:outline-none focus:ring-0 placeholder:text-muted-foreground font-typewriter leading-loose"
+        className="resize-none bg-transparent shadow-none border-none p-0 focus:outline-none focus:ring-0 placeholder:text-muted-foreground font-typewriter leading-loose"
       />
 
       {/* Footer */}
