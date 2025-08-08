@@ -40,6 +40,7 @@ const FONT_SIZE_STYLES: Record<FontSizeLevel, string> = {
 };
 
 const LOCAL_STORAGE_KEY = "note-editor-font-size";
+const MAX_CHARS = 4096;
 
 const NoteEditor = forwardRef(function NoteEditor(
   { note, onUpdate }: NoteEditorProps,
@@ -47,6 +48,8 @@ const NoteEditor = forwardRef(function NoteEditor(
 ) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [charCount, setCharCount] = useState(0);
+  const [wordCount, setWordCount] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [fontSize, setFontSize] = useState<FontSizeLevel>("regular");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
@@ -55,12 +58,36 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   const editorRef = useRef<HTMLDivElement>(null);
 
+  const updateBody = (html: string) => {
+    const temp = document.createElement("div");
+    temp.innerHTML = html;
+    const plainText = temp.innerText;
+
+    if (plainText.length <= MAX_CHARS) {
+      setBody(html);
+      setCharCount(plainText.length);
+      setWordCount(
+        plainText.trim() === "" ? 0 : plainText.trim().split(/\s+/).length
+      );
+    } else {
+      const trimmed = plainText.slice(0, MAX_CHARS);
+      setBody(trimmed);
+      setCharCount(MAX_CHARS);
+      setWordCount(
+        trimmed.trim() === "" ? 0 : trimmed.trim().split(/\s+/).length
+      );
+      if (editorRef.current) {
+        editorRef.current.innerText = trimmed;
+      }
+    }
+  };
+
   // Format text
   const formatText = (command: string) => {
     document.execCommand(command, false, "");
     setTimeout(() => {
       if (editorRef.current) {
-        setBody(editorRef.current.innerHTML);
+        updateBody(editorRef.current.innerHTML);
       }
     }, 0);
   };
@@ -73,11 +100,24 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   };
 
+  // Handle input with char limit
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    updateBody((e.target as HTMLDivElement).innerHTML);
+  };
+
   // Load note
   useEffect(() => {
     if (note) {
       setTitle(note.title);
       setBody(note.body);
+
+      const temp = document.createElement("div");
+      temp.innerHTML = note.body;
+      const plainText = temp.innerText;
+      setCharCount(plainText.length);
+      setWordCount(
+        plainText.trim() === "" ? 0 : plainText.trim().split(/\s+/).length
+      );
     }
   }, [note]);
 
@@ -86,10 +126,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     const timeout = setTimeout(() => {
       if (note && (title !== note.title || body !== note.body)) {
         setSaveStatus("saving");
-
-        // Sanitize before saving
         const cleanHTML = DOMPurify.sanitize(body);
-
         supabase
           .from("notes")
           .update({ title, body: cleanHTML })
@@ -177,7 +214,6 @@ const NoteEditor = forwardRef(function NoteEditor(
       <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
         <div className="flex items-center gap-2">
           <TooltipProvider>
-            {/* Formatting */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -230,7 +266,6 @@ const NoteEditor = forwardRef(function NoteEditor(
               <TooltipContent>Strikethrough</TooltipContent>
             </Tooltip>
 
-            {/* Font size */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -261,7 +296,6 @@ const NoteEditor = forwardRef(function NoteEditor(
           </TooltipProvider>
         </div>
 
-        {/* Save + Download */}
         <div className="flex items-center gap-3">
           {saveStatus === "saving" && (
             <Loader2 className="animate-spin w-4 h-4 text-muted-foreground" />
@@ -304,7 +338,7 @@ const NoteEditor = forwardRef(function NoteEditor(
         data-gramm="false"
         data-placeholder="Start typing your note..."
         dangerouslySetInnerHTML={{ __html: body }}
-        onInput={(e) => setBody((e.target as HTMLDivElement).innerHTML)}
+        onInput={handleInput}
         onKeyDown={handleKeyDown}
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
@@ -315,7 +349,11 @@ const NoteEditor = forwardRef(function NoteEditor(
         className="bg-transparent leading-loose placeholder"
       />
 
-      {/* Scroll to top */}
+      {/* Counter */}
+      <div className="mt-2 text-sm text-muted-foreground text-right">
+        {wordCount} words • {charCount}/{MAX_CHARS} chars
+      </div>
+
       {showScrollTop && (
         <button
           onClick={scrollToTop}
@@ -325,7 +363,6 @@ const NoteEditor = forwardRef(function NoteEditor(
         </button>
       )}
 
-      {/* ContentEditable Placeholder CSS */}
       <style>
         {`
     [contenteditable]:empty:before {
