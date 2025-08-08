@@ -301,6 +301,7 @@ const NoteEditor = forwardRef(function NoteEditor(
       <div
         ref={editorRef}
         contentEditable
+        data-gramm="false"
         data-placeholder="Start typing your note..."
         dangerouslySetInnerHTML={{ __html: body }}
         onInput={(e) => setBody((e.target as HTMLDivElement).innerHTML)}
