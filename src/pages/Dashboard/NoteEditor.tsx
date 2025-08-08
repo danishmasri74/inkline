@@ -58,45 +58,30 @@ const NoteEditor = forwardRef(function NoteEditor(
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [currentLine, setCurrentLine] = useState(0);
   const [fontSize, setFontSize] = useState<FontSizeLevel>("regular");
-  const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
     "idle"
   );
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
-  // Apply formatting around selected text
-  const applyFormatting = (before: string, after: string = before) => {
-    if (!textareaRef.current) return;
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-
-    const selectedText = body.substring(start, end);
-    const newText =
-      body.substring(0, start) +
-      before +
-      selectedText +
-      after +
-      body.substring(end);
-
-    setBody(newText);
-
-    // Keep selection around newly formatted text
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + before.length, end + before.length);
-    }, 0);
+  // Toolbar formatting
+  const formatText = (command: string) => {
+    document.execCommand(command, false, "");
+    if (editorRef.current) {
+      setBody(editorRef.current.innerHTML);
+    }
   };
 
+  // Load note
   useEffect(() => {
     if (note) {
       setTitle(note.title);
-      setBody(note.body);
+      setBody(note.body); // HTML now
       setCurrentLine(0);
     }
   }, [note]);
 
+  // Auto-save
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (note && (title !== note.title || body !== note.body)) {
@@ -118,10 +103,10 @@ const NoteEditor = forwardRef(function NoteEditor(
           });
       }
     }, 800);
-
     return () => clearTimeout(timeout);
   }, [title, body, note]);
 
+  // Scroll button
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 200);
@@ -130,6 +115,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Font size storage
   useEffect(() => {
     const storedSize = localStorage.getItem(LOCAL_STORAGE_KEY) as FontSizeLevel;
     if (FONT_SIZES.includes(storedSize)) {
@@ -142,17 +128,13 @@ const NoteEditor = forwardRef(function NoteEditor(
   }, [fontSize]);
 
   const increaseFontSize = () => {
-    const currentIndex = FONT_SIZES.indexOf(fontSize);
-    if (currentIndex < FONT_SIZES.length - 1) {
-      setFontSize(FONT_SIZES[currentIndex + 1]);
-    }
+    const idx = FONT_SIZES.indexOf(fontSize);
+    if (idx < FONT_SIZES.length - 1) setFontSize(FONT_SIZES[idx + 1]);
   };
 
   const decreaseFontSize = () => {
-    const currentIndex = FONT_SIZES.indexOf(fontSize);
-    if (currentIndex > 0) {
-      setFontSize(FONT_SIZES[currentIndex - 1]);
-    }
+    const idx = FONT_SIZES.indexOf(fontSize);
+    if (idx > 0) setFontSize(FONT_SIZES[idx - 1]);
   };
 
   const scrollToTop = () => {
@@ -161,11 +143,12 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   const downloadAsTxt = () => {
     if (!note) return;
-
-    const content = `Title: ${title}\n\n${body}`;
+    const temp = document.createElement("div");
+    temp.innerHTML = body;
+    const plainText = temp.innerText;
+    const content = `Title: ${title}\n\n${plainText}`;
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
     link.href = url;
     link.download = `${title || "note"}.txt`;
@@ -175,29 +158,6 @@ const NoteEditor = forwardRef(function NoteEditor(
     URL.revokeObjectURL(url);
   };
 
-  const focusLine = (lineIndex: number) => {
-    if (!textareaRef.current) return;
-
-    const lines = body.split("\n");
-    const clampedIndex = Math.max(0, Math.min(lineIndex, lines.length - 1));
-    const start = lines
-      .slice(0, clampedIndex)
-      .reduce((acc, line) => acc + line.length + 1, 0);
-    const end = start + lines[clampedIndex].length;
-
-    textareaRef.current.focus();
-    textareaRef.current.setSelectionRange(start, end);
-    setCurrentLine(clampedIndex);
-  };
-
-  useImperativeHandle(ref, () => ({
-    focusLine,
-    focusNextLine: () => focusLine(currentLine + 1),
-    focusPrevLine: () => focusLine(currentLine - 1),
-    getCurrentLine: () => currentLine,
-    getLineCount: () => body.split("\n").length,
-  }));
-
   if (!note) {
     return (
       <p className="text-muted-foreground italic">Select a note to view/edit</p>
@@ -206,23 +166,20 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   return (
     <div
-      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide p-6 min-h-[75vh] transition-all"
-      style={{
-        maxWidth: "85ch",
-        margin: "0 auto",
-      }}
+      className="relative bg-card text-card-foreground rounded-md border border-border font-typewriter leading-relaxed tracking-wide p-6 min-h-[75vh]"
+      style={{ maxWidth: "85ch", margin: "0 auto" }}
     >
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
         <div className="flex items-center gap-2">
           <TooltipProvider>
-            {/* Formatting buttons */}
+            {/* Formatting */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => applyFormatting("**")}
+                  onClick={() => formatText("bold")}
                 >
                   <Bold size={16} />
                 </Button>
@@ -235,7 +192,7 @@ const NoteEditor = forwardRef(function NoteEditor(
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => applyFormatting("*")}
+                  onClick={() => formatText("italic")}
                 >
                   <Italic size={16} />
                 </Button>
@@ -248,7 +205,7 @@ const NoteEditor = forwardRef(function NoteEditor(
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => applyFormatting("__")}
+                  onClick={() => formatText("underline")}
                 >
                   <Underline size={16} />
                 </Button>
@@ -261,7 +218,7 @@ const NoteEditor = forwardRef(function NoteEditor(
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => applyFormatting("~~")}
+                  onClick={() => formatText("strikeThrough")}
                 >
                   <Strikethrough size={16} />
                 </Button>
@@ -269,7 +226,7 @@ const NoteEditor = forwardRef(function NoteEditor(
               <TooltipContent>Strikethrough</TooltipContent>
             </Tooltip>
 
-            {/* Font size controls */}
+            {/* Font size */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -300,6 +257,7 @@ const NoteEditor = forwardRef(function NoteEditor(
           </TooltipProvider>
         </div>
 
+        {/* Save + Download */}
         <div className="flex items-center gap-3">
           {saveStatus === "saving" && (
             <Loader2 className="animate-spin w-4 h-4 text-muted-foreground" />
@@ -331,47 +289,30 @@ const NoteEditor = forwardRef(function NoteEditor(
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
-        style={{
-          fontSize: FONT_SIZE_STYLES[fontSize],
-        }}
-        className="text-3xl shadow-none mb-6 font-bold font-typewriter bg-transparent border-none focus:border-primary rounded-none p-0 placeholder:text-muted-foreground"
+        style={{ fontSize: FONT_SIZE_STYLES[fontSize] }}
+        className="text-3xl shadow-none mb-6 font-bold font-typewriter bg-transparent border-none p-0"
       />
 
-      {/* Body */}
-      <Textarea
-        ref={textareaRef}
-        value={body}
-        onChange={(e) => {
-          if (e.target.value.length <= MAX_BODY_LENGTH) {
-            setBody(e.target.value);
-          }
-        }}
-        rows={20}
-        placeholder="Start typing your note..."
+      {/* Rich Text Body */}
+      <div
+        ref={editorRef}
+        contentEditable
+        dangerouslySetInnerHTML={{ __html: body }}
+        onInput={(e) => setBody((e.target as HTMLDivElement).innerHTML)}
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
+          outline: "none",
+          minHeight: "300px",
+          whiteSpace: "pre-wrap",
         }}
-        className="resize-none bg-transparent shadow-none border-none p-0 focus:outline-none focus:ring-0 placeholder:text-muted-foreground font-typewriter leading-loose"
+        className="bg-transparent leading-loose"
       />
 
-      {/* Footer */}
-      <div className="flex justify-between items-center mt-4">
-        <div
-          className={`text-sm ${
-            body.length > MAX_BODY_LENGTH * 0.9
-              ? "text-red-500"
-              : "text-muted-foreground"
-          }`}
-        >
-          {body.length} / {MAX_BODY_LENGTH}
-        </div>
-      </div>
-
-      {/* Scroll to Top Button */}
+      {/* Scroll to top */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground p-3 rounded-full hover:bg-primary/90 transition-all animate-fade-in"
+          className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground p-3 rounded-full hover:bg-primary/90"
         >
           <ChevronUp size={20} />
         </button>
@@ -379,5 +320,4 @@ const NoteEditor = forwardRef(function NoteEditor(
     </div>
   );
 });
-
 export default NoteEditor;
