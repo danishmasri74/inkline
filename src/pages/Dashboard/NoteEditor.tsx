@@ -1,11 +1,4 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import { Textarea } from "@/components/ui/textarea";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Note } from "@/types/Notes";
@@ -28,13 +21,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import DOMPurify from "dompurify";
 
 type NoteEditorProps = {
   note: Note | null;
   onUpdate: (updatedNote: Note) => void;
 };
-
-const MAX_BODY_LENGTH = 4096;
 
 const FONT_SIZES = ["smallest", "small", "regular", "big", "biggest"] as const;
 type FontSizeLevel = (typeof FONT_SIZES)[number];
@@ -56,7 +48,6 @@ const NoteEditor = forwardRef(function NoteEditor(
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [currentLine, setCurrentLine] = useState(0);
   const [fontSize, setFontSize] = useState<FontSizeLevel>("regular");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
     "idle"
@@ -64,11 +55,21 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // Toolbar formatting
+  // Format text
   const formatText = (command: string) => {
     document.execCommand(command, false, "");
-    if (editorRef.current) {
-      setBody(editorRef.current.innerHTML);
+    setTimeout(() => {
+      if (editorRef.current) {
+        setBody(editorRef.current.innerHTML);
+      }
+    }, 0);
+  };
+
+  // Handle Enter -> insert <br>
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter") {
+      document.execCommand("insertLineBreak");
+      e.preventDefault();
     }
   };
 
@@ -76,8 +77,7 @@ const NoteEditor = forwardRef(function NoteEditor(
   useEffect(() => {
     if (note) {
       setTitle(note.title);
-      setBody(note.body); // HTML now
-      setCurrentLine(0);
+      setBody(note.body);
     }
   }, [note]);
 
@@ -86,9 +86,13 @@ const NoteEditor = forwardRef(function NoteEditor(
     const timeout = setTimeout(() => {
       if (note && (title !== note.title || body !== note.body)) {
         setSaveStatus("saving");
+
+        // Sanitize before saving
+        const cleanHTML = DOMPurify.sanitize(body);
+
         supabase
           .from("notes")
-          .update({ title, body })
+          .update({ title, body: cleanHTML })
           .eq("id", note.id)
           .select()
           .single()
@@ -297,15 +301,17 @@ const NoteEditor = forwardRef(function NoteEditor(
       <div
         ref={editorRef}
         contentEditable
+        data-placeholder="Start typing your note..."
         dangerouslySetInnerHTML={{ __html: body }}
         onInput={(e) => setBody((e.target as HTMLDivElement).innerHTML)}
+        onKeyDown={handleKeyDown}
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
           outline: "none",
           minHeight: "300px",
           whiteSpace: "pre-wrap",
         }}
-        className="bg-transparent leading-loose"
+        className="bg-transparent leading-loose placeholder"
       />
 
       {/* Scroll to top */}
@@ -317,7 +323,19 @@ const NoteEditor = forwardRef(function NoteEditor(
           <ChevronUp size={20} />
         </button>
       )}
+
+      {/* ContentEditable Placeholder CSS */}
+      <style>
+        {`
+    [contenteditable]:empty:before {
+      content: attr(data-placeholder);
+      color: var(--muted-foreground);
+      pointer-events: none;
+    }
+  `}
+      </style>
     </div>
   );
 });
+
 export default NoteEditor;
