@@ -10,7 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Note } from "@/types/Notes";
 import { supabase } from "@/lib/supabaseClient";
-import { Download, ChevronUp, Plus, Minus, Check, Loader2 } from "lucide-react";
+import {
+  Download,
+  ChevronUp,
+  Plus,
+  Minus,
+  Check,
+  Loader2,
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -53,6 +64,30 @@ const NoteEditor = forwardRef(function NoteEditor(
   );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Apply formatting around selected text
+  const applyFormatting = (before: string, after: string = before) => {
+    if (!textareaRef.current) return;
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const selectedText = body.substring(start, end);
+    const newText =
+      body.substring(0, start) +
+      before +
+      selectedText +
+      after +
+      body.substring(end);
+
+    setBody(newText);
+
+    // Keep selection around newly formatted text
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + before.length, end + before.length);
+    }, 0);
+  };
 
   useEffect(() => {
     if (note) {
@@ -181,6 +216,60 @@ const NoteEditor = forwardRef(function NoteEditor(
       <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
         <div className="flex items-center gap-2">
           <TooltipProvider>
+            {/* Formatting buttons */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => applyFormatting("**")}
+                >
+                  <Bold size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Bold</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => applyFormatting("*")}
+                >
+                  <Italic size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Italic</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => applyFormatting("__")}
+                >
+                  <Underline size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Underline</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => applyFormatting("~~")}
+                >
+                  <Strikethrough size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Strikethrough</TooltipContent>
+            </Tooltip>
+
+            {/* Font size controls */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
