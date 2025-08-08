@@ -245,7 +245,7 @@ const NoteEditor = forwardRef(function NoteEditor(
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
         }}
-        className="text-3xl mb-6 font-bold font-typewriter bg-transparent border-b border-border focus:border-primary rounded-none p-0 placeholder:text-muted-foreground"
+        className="text-3xl mb-6 font-bold font-typewriter bg-transparent focus:border-primary rounded-none p-0 placeholder:text-muted-foreground"
       />
 
       {/* Body */}
