@@ -1,7 +1,9 @@
 import { useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Note } from "@/types/Notes";
-import { isToday, isYesterday, format } from "date-fns";
+import { isToday, isYesterday } from "date-fns";
 import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
@@ -13,6 +15,8 @@ type SidebarProps = {
   onLogout: () => void;
   userEmail: string;
   onClose?: () => void;
+  onDeselect?: () => void;
+  onCreateNote?: () => void;
 };
 
 const getInitial = (email: string) => email?.charAt(0)?.toUpperCase() ?? "?";
@@ -24,9 +28,12 @@ export default function Sidebar({
   onLogout,
   userEmail,
   onClose,
+  onDeselect,
+  onCreateNote,
 }: SidebarProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // Categorize notes
   const { todayNotes, yesterdayNotes, olderNotes } = useMemo(() => {
     const today: Note[] = [];
     const yesterday: Note[] = [];
@@ -41,12 +48,12 @@ export default function Sidebar({
   }, [notes]);
 
   const sections = useMemo(() => {
-    const s = [];
-    if (todayNotes.length) s.push({ label: "Today", notes: todayNotes });
+    const data = [];
+    if (todayNotes.length) data.push({ label: "TODAY", notes: todayNotes });
     if (yesterdayNotes.length)
-      s.push({ label: "Yesterday", notes: yesterdayNotes });
-    if (olderNotes.length) s.push({ label: "Older", notes: olderNotes });
-    return s;
+      data.push({ label: "YESTERDAY", notes: yesterdayNotes });
+    if (olderNotes.length) data.push({ label: "OLDER", notes: olderNotes });
+    return data;
   }, [todayNotes, yesterdayNotes, olderNotes]);
 
   const flatList = useMemo(() => {
@@ -62,94 +69,103 @@ export default function Sidebar({
   const rowVirtualizer = useVirtualizer({
     count: flatList.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 48,
+    estimateSize: () => 44,
     overscan: 8,
   });
 
-  const noteLimit = 100;
-  const noteCount = notes.length;
-  const progress = Math.min((noteCount / noteLimit) * 100, 100);
-
   return (
-    <aside className="w-72 max-w-full h-[100dvh] flex flex-col font-typewriter bg-[#f8f5f0] text-[#3b2f2f] shadow-lg fixed md:static z-50">
+    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background font-typewriter z-50 md:fixed md:left-0 md:top-0 border-r border-border">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-[#e0d8c3]">
-        <img src={inklineIcon} alt="InkLine" className="h-10 w-10 rounded" />
-        <div>
-          <h2 className="text-lg font-bold">InkLine</h2>
-          <p className="text-xs opacity-70">No fuss. Just notes.</p>
-        </div>
+      <div
+        className="flex items-center gap-3 p-4 shrink-0 select-none"
+        role="button"
+        onClick={onDeselect}
+      >
+        <img src={inklineIcon} alt="InkLine Logo" className="h-10 w-10" />
+        <h2 className="text-lg font-semibold tracking-wider">InkLine</h2>
         {onClose && (
-          <button onClick={onClose} className="ml-auto md:hidden p-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="ml-auto md:hidden"
+          >
             <XIcon className="h-5 w-5" />
-          </button>
+          </Button>
         )}
       </div>
 
-      {/* Notes */}
-      <div ref={parentRef} className="flex-1 overflow-y-auto">
-        <div
-          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-          className="relative"
-        >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const item = flatList[virtualRow.index];
-            return (
-              <div
-                key={virtualRow.key}
-                ref={rowVirtualizer.measureElement}
-                className="absolute top-0 left-0 right-0"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                {item.type === "section" ? (
-                  <motion.h3
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className="px-4 py-2 text-xs uppercase tracking-wide opacity-60"
-                  >
-                    {item.label}
-                  </motion.h3>
-                ) : (
-                  <button
-                    onClick={() => onSelect(item.note!.id)}
-                    className={`w-full text-left px-4 py-3 text-sm truncate transition
-                      ${
-                        item.note!.id === selectedId
-                          ? "bg-[#e8e3d8] font-bold"
-                          : "hover:bg-[#f0ece3]"
-                      }`}
-                  >
-                    <div>{item.note!.title || "Untitled"}</div>
-                    <div className="text-[10px] opacity-60">
-                      {format(new Date(item.note!.updated_at), "MMM d, yyyy")}
-                    </div>
-                  </button>
-                )}
-              </div>
-            );
-          })}
+      <Separator />
+
+      {/* Empty state */}
+      {!notes.length && (
+        <div className="flex-1 flex flex-col items-center justify-center text-sm text-muted-foreground p-4">
+          No notes yet.
+          {onCreateNote && (
+            <Button size="sm" className="mt-3" onClick={onCreateNote}>
+              Create a Note
+            </Button>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Notes list */}
+      {notes.length > 0 && (
+        <div
+          ref={parentRef}
+          className="flex-1 overflow-y-auto custom-scrollbar"
+        >
+          <div
+            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+            className="relative w-full"
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const item = flatList[virtualRow.index];
+              return (
+                <div
+                  key={virtualRow.key}
+                  ref={rowVirtualizer.measureElement}
+                  className="absolute top-0 left-0 right-0"
+                  style={{ transform: `translateY(${virtualRow.start}px)` }}
+                >
+                  {item.type === "section" ? (
+                    <div className="px-3 py-2 text-xs tracking-widest text-muted-foreground border-b border-border sticky top-0 bg-background">
+                      {item.label}
+                    </div>
+                  ) : (
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      className={`w-full text-left px-3 py-2 truncate ${
+                        item.note!.id === selectedId
+                          ? "border-l-4 border-primary bg-accent"
+                          : "hover:bg-accent/50"
+                      }`}
+                      onClick={() => onSelect(item.note!.id)}
+                    >
+                      {item.note!.title || "Untitled"}
+                    </motion.button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
-      <div className="p-4 border-t border-[#e0d8c3]">
-        <div className="flex justify-between text-xs mb-2 opacity-70">
-          <span>
-            {noteCount} / {noteLimit} notes
-          </span>
-        </div>
-        <div className="h-1 bg-[#e0d8c3] overflow-hidden rounded">
-          <div
-            className="h-full bg-[#3b2f2f] transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="mt-3 flex justify-between items-center text-sm">
+      <Separator />
+      <div className="p-4 flex items-center gap-3 text-sm">
+        <Avatar className="h-8 w-8 border">
+          <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col truncate">
           <span className="truncate">{userEmail}</span>
           <button
             onClick={onLogout}
-            className="underline text-xs opacity-70 hover:opacity-100"
+            className="text-xs text-muted-foreground hover:underline text-left"
           >
             Log out
           </button>
