@@ -1,12 +1,5 @@
 import { useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Note } from "@/types/Notes";
 import { isToday, isYesterday, format } from "date-fns";
 import inklineIcon from "@/assets/InkLine.png";
@@ -18,11 +11,8 @@ type SidebarProps = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onLogout: () => void;
-  loading: boolean;
   userEmail: string;
   onClose?: () => void;
-  onDeselect?: () => void;
-  onCreateNote?: () => void;
 };
 
 const getInitial = (email: string) => email?.charAt(0)?.toUpperCase() ?? "?";
@@ -32,15 +22,11 @@ export default function Sidebar({
   selectedId,
   onSelect,
   onLogout,
-  loading,
   userEmail,
   onClose,
-  onDeselect,
-  onCreateNote,
 }: SidebarProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // Categorize Notes
   const { todayNotes, yesterdayNotes, olderNotes } = useMemo(() => {
     const today: Note[] = [];
     const yesterday: Note[] = [];
@@ -55,27 +41,19 @@ export default function Sidebar({
   }, [notes]);
 
   const sections = useMemo(() => {
-    const data = [];
-    if (todayNotes.length) data.push({ label: "Today", notes: todayNotes });
+    const s = [];
+    if (todayNotes.length) s.push({ label: "Today", notes: todayNotes });
     if (yesterdayNotes.length)
-      data.push({ label: "Yesterday", notes: yesterdayNotes });
-    if (olderNotes.length) data.push({ label: "Older", notes: olderNotes });
-    return data;
+      s.push({ label: "Yesterday", notes: yesterdayNotes });
+    if (olderNotes.length) s.push({ label: "Older", notes: olderNotes });
+    return s;
   }, [todayNotes, yesterdayNotes, olderNotes]);
 
   const flatList = useMemo(() => {
-    const list: {
-      type: "section" | "note";
-      label?: string;
-      note?: Note;
-      noteCount?: number;
-    }[] = [];
+    const list: { type: "section" | "note"; label?: string; note?: Note }[] =
+      [];
     for (const section of sections) {
-      list.push({
-        type: "section",
-        label: section.label,
-        noteCount: section.notes.length,
-      });
+      list.push({ type: "section", label: section.label });
       section.notes.forEach((note) => list.push({ type: "note", note }));
     }
     return list;
@@ -84,186 +62,97 @@ export default function Sidebar({
   const rowVirtualizer = useVirtualizer({
     count: flatList.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 52,
+    estimateSize: () => 48,
     overscan: 8,
   });
 
   const noteLimit = 100;
   const noteCount = notes.length;
   const progress = Math.min((noteCount / noteLimit) * 100, 100);
-  const progressColor =
-    progress >= 100
-      ? "bg-destructive"
-      : progress >= 80
-      ? "bg-yellow-500"
-      : "bg-primary";
 
   return (
-    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 md:fixed md:left-0 md:top-0">
+    <aside className="w-72 max-w-full h-[100dvh] flex flex-col font-typewriter bg-[#f8f5f0] text-[#3b2f2f] shadow-lg fixed md:static z-50">
       {/* Header */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onDeselect}
-        className="cursor-pointer p-4 flex items-center gap-3 shrink-0 hover:bg-muted/70 transition rounded-b-md"
-      >
-        <motion.img
-          src={inklineIcon}
-          alt="InkLine Logo"
-          className="h-12 w-12 rounded-md"
-          whileHover={{ scale: 1.05 }}
-        />
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1">
-            <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
-            <span className="animate-blink text-xl">|</span>
-          </div>
-          <p className="text-xs text-muted-foreground">No fuss. Just notes.</p>
+      <div className="flex items-center gap-3 p-4 border-b border-[#e0d8c3]">
+        <img src={inklineIcon} alt="InkLine" className="h-10 w-10 rounded" />
+        <div>
+          <h2 className="text-lg font-bold">InkLine</h2>
+          <p className="text-xs opacity-70">No fuss. Just notes.</p>
         </div>
         {onClose && (
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            aria-label="Close sidebar"
-            className="ml-auto md:hidden hover:bg-accent"
-          >
+          <button onClick={onClose} className="ml-auto md:hidden p-1">
             <XIcon className="h-5 w-5" />
-          </Button>
+          </button>
         )}
       </div>
 
-      <Separator />
-
-      {/* Empty State */}
-      {!notes.length && (
-        <div className="flex flex-col items-center justify-center flex-1 text-center p-4">
-          <p className="text-muted-foreground text-sm">
-            You have no notes yet.
-          </p>
-          {onCreateNote && (
-            <Button className="mt-2" onClick={onCreateNote}>
-              Create Note
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Note List */}
-      {notes.length > 0 && (
+      {/* Notes */}
+      <div ref={parentRef} className="flex-1 overflow-y-auto">
         <div
-          ref={parentRef}
-          className="flex-1 overflow-y-auto relative custom-scrollbar"
+          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+          className="relative"
         >
-          <div
-            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-            className="relative w-full"
-          >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const item = flatList[virtualRow.index];
-              return (
-                <div
-                  key={virtualRow.key}
-                  ref={rowVirtualizer.measureElement}
-                  className="absolute top-0 left-0 right-0"
-                  style={{ transform: `translateY(${virtualRow.start}px)` }}
-                >
-                  {item.type === "section" ? (
-                    <motion.h3
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground 
-                                 bg-gradient-to-b from-background/90 to-background backdrop-blur border-b border-border 
-                                 flex items-center gap-2"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                      <span className="flex-1 truncate">{item.label}</span>
-                      <span className="text-[10px]">{item.noteCount}</span>
-                    </motion.h3>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Button
-                        variant={
-                          item.note!.id === selectedId ? "secondary" : "ghost"
-                        }
-                        className={`w-full justify-start px-3 py-2 rounded-md truncate transition 
-                          ${
-                            item.note!.id === selectedId
-                              ? "font-semibold border-l-4 border-primary"
-                              : "hover:bg-accent"
-                          }`}
-                        onClick={() => onSelect(item.note!.id)}
-                      >
-                        <div className="flex flex-col items-start overflow-hidden">
-                          <span className="truncate">
-                            {item.note!.title || "Untitled"}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {format(
-                              new Date(item.note!.updated_at),
-                              "MMM d, yyyy"
-                            )}
-                          </span>
-                        </div>
-                      </Button>
-                    </motion.div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const item = flatList[virtualRow.index];
+            return (
+              <div
+                key={virtualRow.key}
+                ref={rowVirtualizer.measureElement}
+                className="absolute top-0 left-0 right-0"
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+              >
+                {item.type === "section" ? (
+                  <motion.h3
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="px-4 py-2 text-xs uppercase tracking-wide opacity-60"
+                  >
+                    {item.label}
+                  </motion.h3>
+                ) : (
+                  <button
+                    onClick={() => onSelect(item.note!.id)}
+                    className={`w-full text-left px-4 py-3 text-sm truncate transition
+                      ${
+                        item.note!.id === selectedId
+                          ? "bg-[#e8e3d8] font-bold"
+                          : "hover:bg-[#f0ece3]"
+                      }`}
+                  >
+                    <div>{item.note!.title || "Untitled"}</div>
+                    <div className="text-[10px] opacity-60">
+                      {format(new Date(item.note!.updated_at), "MMM d, yyyy")}
+                    </div>
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
       {/* Footer */}
-      <div className="shrink-0 bg-muted/40 rounded-t-md">
-        <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
-          <span>Notes</span>
+      <div className="p-4 border-t border-[#e0d8c3]">
+        <div className="flex justify-between text-xs mb-2 opacity-70">
           <span>
-            {noteCount} / {noteLimit}
+            {noteCount} / {noteLimit} notes
           </span>
         </div>
-        <div className="px-4 pb-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full ${progressColor}`}
-                  style={{ width: `${progress}%` }}
-                  transition={{ duration: 0.4 }}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              {progress >= 100
-                ? "You have reached the maximum note limit."
-                : `${noteLimit - noteCount} notes remaining`}
-            </TooltipContent>
-          </Tooltip>
+        <div className="h-1 bg-[#e0d8c3] overflow-hidden rounded">
+          <div
+            className="h-full bg-[#3b2f2f] transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
         </div>
-        <Separator />
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Avatar className="h-9 w-9 border cursor-pointer">
-            <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-medium truncate">{userEmail}</span>
-            <Button
-              variant="link"
-              className="text-xs text-muted-foreground px-0 h-auto hover:underline"
-              onClick={onLogout}
-            >
-              Log out
-            </Button>
-          </div>
+        <div className="mt-3 flex justify-between items-center text-sm">
+          <span className="truncate">{userEmail}</span>
+          <button
+            onClick={onLogout}
+            className="underline text-xs opacity-70 hover:opacity-100"
+          >
+            Log out
+          </button>
         </div>
       </div>
     </aside>
