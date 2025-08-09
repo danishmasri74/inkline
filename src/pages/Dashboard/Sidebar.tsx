@@ -1,12 +1,13 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { Note } from "@/types/Notes";
-import { isToday, isYesterday } from "date-fns";
+import { isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 type SidebarProps = {
   notes: Note[];
@@ -31,8 +32,10 @@ export default function Sidebar({
   userEmail,
   onClose,
   onDeselect,
+  onCreateNote,
 }: SidebarProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [search, setSearch] = useState("");
 
   // ─── Categorize Notes ─────────────────────────────
   const { todayNotes, yesterdayNotes, olderNotes } = useMemo(() => {
@@ -46,7 +49,6 @@ export default function Sidebar({
       else if (isYesterday(updatedAt)) yesterday.push(note);
       else older.push(note);
     }
-
     return { todayNotes: today, yesterdayNotes: yesterday, olderNotes: older };
   }, [notes]);
 
@@ -59,6 +61,18 @@ export default function Sidebar({
     return data;
   }, [todayNotes, yesterdayNotes, olderNotes]);
 
+  const filteredSections = useMemo(() => {
+    if (!search.trim()) return sections;
+    return sections
+      .map((section) => ({
+        ...section,
+        notes: section.notes.filter((note) =>
+          note.title?.toLowerCase().includes(search.toLowerCase())
+        ),
+      }))
+      .filter((section) => section.notes.length > 0);
+  }, [sections, search]);
+
   const flatList = useMemo(() => {
     const list: {
       type: "section" | "note";
@@ -67,7 +81,7 @@ export default function Sidebar({
       noteCount?: number;
     }[] = [];
 
-    for (const section of sections) {
+    for (const section of filteredSections) {
       list.push({
         type: "section",
         label: section.label,
@@ -75,14 +89,13 @@ export default function Sidebar({
       });
       section.notes.forEach((note) => list.push({ type: "note", note }));
     }
-
     return list;
-  }, [sections]);
+  }, [filteredSections]);
 
   const rowVirtualizer = useVirtualizer({
     count: flatList.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 44,
+    estimateSize: () => 56, // bigger for preview
     overscan: 10,
   });
 
@@ -97,7 +110,14 @@ export default function Sidebar({
       : "bg-primary";
 
   return (
-    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 md:fixed md:left-0 md:top-0">
+    <motion.aside
+      initial={{ x: -300 }}
+      animate={{ x: 0 }}
+      exit={{ x: -300 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      role="navigation"
+      className="w-full md:w-72 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 md:fixed md:left-0 md:top-0"
+    >
       {/* ─── Header ─────────────────────────────────── */}
       <div
         role="button"
@@ -113,13 +133,25 @@ export default function Sidebar({
           alt="InkLine Logo"
           className="h-12 w-12 rounded-md"
         />
-        <div className="flex flex-col">
+        <div className="flex flex-col flex-1 min-w-0">
           <div className="flex items-center gap-1">
             <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
             <span className="animate-blink text-xl">|</span>
           </div>
           <p className="text-xs text-muted-foreground">No fuss. Just notes.</p>
         </div>
+        {onCreateNote && (
+          <Button
+            size="sm"
+            variant="default"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateNote();
+            }}
+          >
+            + New
+          </Button>
+        )}
         {onClose && (
           <Button
             size="icon"
@@ -138,67 +170,80 @@ export default function Sidebar({
 
       <Separator />
 
+      {/* Search */}
+      <div className="p-3">
+        <Input
+          placeholder="Search notes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="text-sm"
+        />
+      </div>
+
+      <Separator />
+
       {/* ─── Note List ─────────────────────────────── */}
       <div
         ref={parentRef}
         className="flex-1 overflow-y-auto relative custom-scrollbar"
+        role="list"
       >
         <div
           style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
           className="relative w-full"
         >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const item = flatList[virtualRow.index];
-            const top = virtualRow.start;
+          <AnimatePresence>
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const item = flatList[virtualRow.index];
+              const top = virtualRow.start;
 
-            return (
-              <div
-                key={virtualRow.key}
-                ref={rowVirtualizer.measureElement}
-                className="absolute top-0 left-0 right-0"
-                style={{ transform: `translateY(${top}px)` }}
-              >
-                {item.type === "section" ? (
-                  <motion.h3
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      duration: 0.3,
-                      delay: 0.05 * virtualRow.index,
-                    }}
-                    className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground bg-background/80 backdrop-blur border-b border-border flex items-center gap-2"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                    <span className="flex-1 truncate">{item.label}</span>
-                    <span className="text-[10px]">{item.noteCount}</span>
-                  </motion.h3>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{
-                      duration: 0.3,
-                      delay: 0.03 * virtualRow.index,
-                    }}
-                  >
+              return (
+                <motion.div
+                  key={virtualRow.key}
+                  ref={rowVirtualizer.measureElement}
+                  className="absolute top-0 left-0 right-0"
+                  style={{ transform: `translateY(${top}px)` }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {item.type === "section" ? (
+                    <h3 className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground bg-background/90 backdrop-blur border-b border-border flex items-center gap-2 section-header">
+                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      <span className="text-[10px]">{item.noteCount}</span>
+                    </h3>
+                  ) : (
                     <Button
+                      role="listitem"
                       variant={
                         item.note!.id === selectedId ? "secondary" : "ghost"
                       }
-                      className={`w-full justify-start px-3 py-2 rounded-md truncate transition hover:bg-accent ${
-                        item.note!.id === selectedId ? "font-semibold" : ""
+                      className={`w-full justify-start px-3 py-2 rounded-md truncate transition relative group hover:bg-accent ${
+                        item.note!.id === selectedId
+                          ? "font-semibold selected-note"
+                          : ""
                       }`}
                       onClick={() => onSelect(item.note!.id)}
                     >
-                      <span className="truncate">
-                        {item.note!.title || "Untitled"}
-                      </span>
+                      <div className="flex flex-col items-start">
+                        <span className="truncate">
+                          {item.note!.title || "Untitled"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground truncate">
+                          {formatDistanceToNow(
+                            new Date(item.note!.updated_at),
+                            { addSuffix: true }
+                          )}
+                        </span>
+                      </div>
                     </Button>
-                  </motion.div>
-                )}
-              </div>
-            );
-          })}
+                  )}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -226,7 +271,10 @@ export default function Sidebar({
         <Separator />
 
         <div className="px-4 py-3 flex items-center gap-3">
-          <Avatar className="h-9 w-9 border">
+          <Avatar
+            className="h-9 w-9 border"
+            title={`Logged in as ${userEmail}`}
+          >
             <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col overflow-hidden">
@@ -249,14 +297,16 @@ export default function Sidebar({
             0%, 50%, 100% { opacity: 1; }
             25%, 75% { opacity: 0; }
           }
-
           .animate-blink {
             display: inline-block;
             animation: blink 1.2s step-end infinite;
           }
+          .selected-note {
+            border-left: 3px solid hsl(var(--primary));
+          }
         `}
       </style>
-    </aside>
+    </motion.aside>
   );
 }
 
