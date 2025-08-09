@@ -1,13 +1,17 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Note } from "@/types/Notes";
-import { isToday, isYesterday, formatDistanceToNow } from "date-fns";
+import { isToday, isYesterday, format } from "date-fns";
 import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 type SidebarProps = {
   notes: Note[];
@@ -35,14 +39,12 @@ export default function Sidebar({
   onCreateNote,
 }: SidebarProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const [search, setSearch] = useState("");
 
-  // ─── Categorize Notes ─────────────────────────────
+  // Categorize Notes
   const { todayNotes, yesterdayNotes, olderNotes } = useMemo(() => {
     const today: Note[] = [];
     const yesterday: Note[] = [];
     const older: Note[] = [];
-
     for (const note of notes) {
       const updatedAt = new Date(note.updated_at);
       if (isToday(updatedAt)) today.push(note);
@@ -61,18 +63,6 @@ export default function Sidebar({
     return data;
   }, [todayNotes, yesterdayNotes, olderNotes]);
 
-  const filteredSections = useMemo(() => {
-    if (!search.trim()) return sections;
-    return sections
-      .map((section) => ({
-        ...section,
-        notes: section.notes.filter((note) =>
-          note.title?.toLowerCase().includes(search.toLowerCase())
-        ),
-      }))
-      .filter((section) => section.notes.length > 0);
-  }, [sections, search]);
-
   const flatList = useMemo(() => {
     const list: {
       type: "section" | "note";
@@ -80,8 +70,7 @@ export default function Sidebar({
       note?: Note;
       noteCount?: number;
     }[] = [];
-
-    for (const section of filteredSections) {
+    for (const section of sections) {
       list.push({
         type: "section",
         label: section.label,
@@ -90,13 +79,13 @@ export default function Sidebar({
       section.notes.forEach((note) => list.push({ type: "note", note }));
     }
     return list;
-  }, [filteredSections]);
+  }, [sections]);
 
   const rowVirtualizer = useVirtualizer({
     count: flatList.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 56, // bigger for preview
-    overscan: 10,
+    estimateSize: () => 52,
+    overscan: 8,
   });
 
   const noteLimit = 100;
@@ -110,48 +99,27 @@ export default function Sidebar({
       : "bg-primary";
 
   return (
-    <motion.aside
-      initial={{ x: -300 }}
-      animate={{ x: 0 }}
-      exit={{ x: -300 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      role="navigation"
-      className="w-full md:w-72 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 md:fixed md:left-0 md:top-0"
-    >
-      {/* ─── Header ─────────────────────────────────── */}
+    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background md:border-r font-typewriter z-50 md:fixed md:left-0 md:top-0">
+      {/* Header */}
       <div
         role="button"
         tabIndex={0}
         onClick={onDeselect}
-        onKeyDown={(e) =>
-          (e.key === "Enter" || e.key === " ") && onDeselect?.()
-        }
-        className="cursor-pointer p-4 flex items-center gap-3 shrink-0 hover:bg-muted/80 transition rounded-b-md"
+        className="cursor-pointer p-4 flex items-center gap-3 shrink-0 hover:bg-muted/70 transition rounded-b-md"
       >
-        <img
+        <motion.img
           src={inklineIcon}
           alt="InkLine Logo"
           className="h-12 w-12 rounded-md"
+          whileHover={{ scale: 1.05 }}
         />
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col">
           <div className="flex items-center gap-1">
             <h2 className="text-xl font-semibold tracking-wide">InkLine</h2>
             <span className="animate-blink text-xl">|</span>
           </div>
           <p className="text-xs text-muted-foreground">No fuss. Just notes.</p>
         </div>
-        {onCreateNote && (
-          <Button
-            size="sm"
-            variant="default"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCreateNote();
-            }}
-          >
-            + New
-          </Button>
-        )}
         {onClose && (
           <Button
             size="icon"
@@ -170,84 +138,92 @@ export default function Sidebar({
 
       <Separator />
 
-      {/* Search */}
-      <div className="p-3">
-        <Input
-          placeholder="Search notes..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="text-sm"
-        />
-      </div>
+      {/* Empty State */}
+      {!notes.length && (
+        <div className="flex flex-col items-center justify-center flex-1 text-center p-4">
+          <p className="text-muted-foreground text-sm">
+            You have no notes yet.
+          </p>
+          {onCreateNote && (
+            <Button className="mt-2" onClick={onCreateNote}>
+              Create Note
+            </Button>
+          )}
+        </div>
+      )}
 
-      <Separator />
-
-      {/* ─── Note List ─────────────────────────────── */}
-      <div
-        ref={parentRef}
-        className="flex-1 overflow-y-auto relative custom-scrollbar"
-        role="list"
-      >
+      {/* Note List */}
+      {notes.length > 0 && (
         <div
-          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-          className="relative w-full"
+          ref={parentRef}
+          className="flex-1 overflow-y-auto relative custom-scrollbar"
         >
-          <AnimatePresence>
+          <div
+            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+            className="relative w-full"
+          >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
               const item = flatList[virtualRow.index];
-              const top = virtualRow.start;
-
               return (
-                <motion.div
+                <div
                   key={virtualRow.key}
                   ref={rowVirtualizer.measureElement}
                   className="absolute top-0 left-0 right-0"
-                  style={{ transform: `translateY(${top}px)` }}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  style={{ transform: `translateY(${virtualRow.start}px)` }}
                 >
                   {item.type === "section" ? (
-                    <h3 className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground bg-background/90 backdrop-blur border-b border-border flex items-center gap-2 section-header">
+                    <motion.h3
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="sticky top-0 z-10 px-3 py-2 text-xs font-medium text-muted-foreground 
+                                 bg-gradient-to-b from-background/90 to-background backdrop-blur border-b border-border 
+                                 flex items-center gap-2"
+                    >
                       <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
                       <span className="flex-1 truncate">{item.label}</span>
                       <span className="text-[10px]">{item.noteCount}</span>
-                    </h3>
+                    </motion.h3>
                   ) : (
-                    <Button
-                      role="listitem"
-                      variant={
-                        item.note!.id === selectedId ? "secondary" : "ghost"
-                      }
-                      className={`w-full justify-start px-3 py-2 rounded-md truncate transition relative group hover:bg-accent ${
-                        item.note!.id === selectedId
-                          ? "font-semibold selected-note"
-                          : ""
-                      }`}
-                      onClick={() => onSelect(item.note!.id)}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <div className="flex flex-col items-start">
-                        <span className="truncate">
-                          {item.note!.title || "Untitled"}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground truncate">
-                          {formatDistanceToNow(
-                            new Date(item.note!.updated_at),
-                            { addSuffix: true }
-                          )}
-                        </span>
-                      </div>
-                    </Button>
+                      <Button
+                        variant={
+                          item.note!.id === selectedId ? "secondary" : "ghost"
+                        }
+                        className={`w-full justify-start px-3 py-2 rounded-md truncate transition 
+                          ${
+                            item.note!.id === selectedId
+                              ? "font-semibold border-l-4 border-primary"
+                              : "hover:bg-accent"
+                          }`}
+                        onClick={() => onSelect(item.note!.id)}
+                      >
+                        <div className="flex flex-col items-start overflow-hidden">
+                          <span className="truncate">
+                            {item.note!.title || "Untitled"}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {format(
+                              new Date(item.note!.updated_at),
+                              "MMM d, yyyy"
+                            )}
+                          </span>
+                        </div>
+                      </Button>
+                    </motion.div>
                   )}
-                </motion.div>
+                </div>
               );
             })}
-          </AnimatePresence>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ─── Footer ─────────────────────────────────── */}
+      {/* Footer */}
       <div className="shrink-0 bg-muted/40 rounded-t-md">
         <div className="px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
           <span>Notes</span>
@@ -255,26 +231,27 @@ export default function Sidebar({
             {noteCount} / {noteLimit}
           </span>
         </div>
-
         <div className="px-4 pb-2">
-          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-            <div
-              className={`h-full ${progressColor} transition-all duration-300`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          {progress >= 100 && (
-            <p className="text-destructive text-xs mt-1">Note limit reached.</p>
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                <motion.div
+                  className={`h-full ${progressColor}`}
+                  style={{ width: `${progress}%` }}
+                  transition={{ duration: 0.4 }}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {progress >= 100
+                ? "You have reached the maximum note limit."
+                : `${noteLimit - noteCount} notes remaining`}
+            </TooltipContent>
+          </Tooltip>
         </div>
-
         <Separator />
-
         <div className="px-4 py-3 flex items-center gap-3">
-          <Avatar
-            className="h-9 w-9 border"
-            title={`Logged in as ${userEmail}`}
-          >
+          <Avatar className="h-9 w-9 border cursor-pointer">
             <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col overflow-hidden">
@@ -289,28 +266,10 @@ export default function Sidebar({
           </div>
         </div>
       </div>
-
-      {/* ─── Blinking Cursor Animation ─────────────── */}
-      <style>
-        {`
-          @keyframes blink {
-            0%, 50%, 100% { opacity: 1; }
-            25%, 75% { opacity: 0; }
-          }
-          .animate-blink {
-            display: inline-block;
-            animation: blink 1.2s step-end infinite;
-          }
-          .selected-note {
-            border-left: 3px solid hsl(var(--primary));
-          }
-        `}
-      </style>
-    </motion.aside>
+    </aside>
   );
 }
 
-// ─── Icon ───────────────────────────────────────────
 function XIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
