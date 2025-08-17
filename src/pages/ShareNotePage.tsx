@@ -40,12 +40,16 @@ export default function ShareNotePage() {
   if (loading) return <div className="p-6 text-center">Loading note...</div>;
   if (error) return <div className="p-6 text-center">{error}</div>;
   if (!note)
-    return <div className="p-6 text-center">This note is private or does not exist.</div>;
+    return (
+      <div className="p-6 text-center">
+        This note is private or does not exist.
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      {/* Top bar like Notion */}
-      <header className="flex items-center p-4 border-b bg-white shadow-sm">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Top bar */}
+      <header className="flex items-center p-4 border-b bg-muted shadow-sm">
         <Link to="/" className="flex items-center space-x-3">
           <img src={appLogo} alt="App Logo" className="h-8 w-8" />
           <span className="font-semibold text-lg">MyNotes</span>
@@ -55,8 +59,10 @@ export default function ShareNotePage() {
       {/* Note content */}
       <main className="max-w-4xl mx-auto p-8">
         <h1 className="text-3xl font-bold mb-6">{note.title}</h1>
-        <pre className="whitespace-pre-wrap text-gray-800 text-lg">{note.body}</pre>
-        <p className="mt-6 text-sm text-gray-500">
+        <pre className="whitespace-pre-wrap text-foreground text-lg">
+          {note.body}
+        </pre>
+        <p className="mt-6 text-sm text-gray-400">
           Last updated: {new Date(note.updated_at).toLocaleString()}
         </p>
       </main>
