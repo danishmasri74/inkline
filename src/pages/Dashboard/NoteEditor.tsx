@@ -105,7 +105,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     updateBody((e.target as HTMLDivElement).innerHTML);
   };
 
-  // Load note
+  // Load note only when switching to a different note
   useEffect(() => {
     if (note) {
       setTitle(note.title);
@@ -119,7 +119,7 @@ const NoteEditor = forwardRef(function NoteEditor(
         plainText.trim() === "" ? 0 : plainText.trim().split(/\s+/).length
       );
     }
-  }, [note]);
+  }, [note?.id]); // ⬅️ only run when note id changes
 
   // Auto-save
   useEffect(() => {
@@ -137,7 +137,8 @@ const NoteEditor = forwardRef(function NoteEditor(
             if (error) {
               console.error("Auto-save failed:", error.message);
             } else if (data) {
-              onUpdate(data);
+              // Only update metadata, not body/title
+              onUpdate({ ...note, updated_at: data.updated_at });
               setSaveStatus("saved");
               setTimeout(() => setSaveStatus("idle"), 2000);
             }
