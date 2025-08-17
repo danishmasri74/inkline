@@ -40,20 +40,26 @@ export default function ShareNotePage() {
 
   if (loading) return <div className="p-6">Loading note...</div>;
   if (error) return <div className="p-6">{error}</div>;
-  if (!note) return <div className="p-6">This note is private or does not exist.</div>;
+  if (!note)
+    return <div className="p-6">This note is private or does not exist.</div>;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
       <header className="flex items-center justify-between p-4 border-b bg-muted shadow-sm">
+        {/* Clickable logo goes to landing page */}
         <Link to="/" className="flex items-center">
-          <img src={appLogo} alt="App Logo" className="h-10 w-10 mr-3 cursor-pointer" />
+          <img
+            src={appLogo}
+            alt="App Logo"
+            className="h-10 w-10 mr-3 cursor-pointer"
+          />
           <span className="font-bold text-lg">MyNotes</span>
         </Link>
-        <Link to="/">
-          <Button variant="outline" size="sm">
-            Back to Home
-          </Button>
+
+        {/* Optional small text link instead of a button */}
+        <Link to="/" className="text-sm text-blue-600 hover:underline">
+          Go to landing page
         </Link>
       </header>
 
