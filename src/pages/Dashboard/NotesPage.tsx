@@ -25,8 +25,6 @@ export default function NotesPage({ session }: { session: Session }) {
   const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(
     () => () => {}
   );
-
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const noteEditorRef = useRef<{
@@ -66,6 +64,12 @@ export default function NotesPage({ session }: { session: Session }) {
     fetchNotes();
   }, [userId, id]);
 
+  const selectedNote = notes.find((note) => note.id === selectedNoteId) || null;
+
+  const shareUrl = selectedNote?.is_public
+    ? `${window.location.origin}/share/${selectedNote.share_id}`
+    : null;
+
   const handleSelectNote = (noteId: string | null) => {
     setSelectedNoteId(noteId);
     if (noteId) {
@@ -97,7 +101,6 @@ export default function NotesPage({ session }: { session: Session }) {
     const idsToDelete = selectedNoteId
       ? [selectedNoteId]
       : selectedTableNoteIds;
-
     if (idsToDelete.length === 0) return;
 
     const { error } = await supabase
@@ -163,17 +166,8 @@ export default function NotesPage({ session }: { session: Session }) {
     setNotes((prev) =>
       prev.map((n) => (n.id === selectedNote.id ? { ...n, ...data } : n))
     );
-
-    if (newStatus) {
-      const url = `${window.location.origin}/share/${data.share_id}`;
-      setShareUrl(url);
-      setCopied(false);
-    } else {
-      setShareUrl(null);
-    }
+    setCopied(false);
   };
-
-  const selectedNote = notes.find((note) => note.id === selectedNoteId) || null;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -243,7 +237,7 @@ export default function NotesPage({ session }: { session: Session }) {
             }
           }}
         />
-        
+
         {/* Share Link Panel */}
         {shareUrl && (
           <div className="flex items-center justify-between gap-2 mb-4 p-3 border rounded-lg bg-muted">
