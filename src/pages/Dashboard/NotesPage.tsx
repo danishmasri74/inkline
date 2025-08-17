@@ -26,6 +26,9 @@ export default function NotesPage({ session }: { session: Session }) {
     () => () => {}
   );
 
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const noteEditorRef = useRef<{
     focusNextLine: () => void;
     focusPrevLine: () => void;
@@ -162,9 +165,11 @@ export default function NotesPage({ session }: { session: Session }) {
     );
 
     if (newStatus) {
-      const shareUrl = `${window.location.origin}/share/${data.share_id}`;
-      await navigator.clipboard.writeText(shareUrl);
-      alert("Share link copied: " + shareUrl);
+      const url = `${window.location.origin}/share/${data.share_id}`;
+      setShareUrl(url);
+      setCopied(false);
+    } else {
+      setShareUrl(null);
     }
   };
 
@@ -229,6 +234,24 @@ export default function NotesPage({ session }: { session: Session }) {
           onToggleShare={selectedNote ? handleToggleShare : undefined}
           isShared={selectedNote?.is_public}
         />
+
+        {/* Share Link Panel */}
+        {shareUrl && (
+          <div className="flex items-center justify-between gap-2 mb-4 p-3 border rounded-lg bg-muted">
+            <span className="truncate text-sm">{shareUrl}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await navigator.clipboard.writeText(shareUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+            >
+              {copied ? "Copied!" : "Copy"}
+            </Button>
+          </div>
+        )}
 
         {selectedNote ? (
           <>
