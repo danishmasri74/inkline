@@ -5,12 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+import { Share2, Globe, Lock } from "lucide-react";
 
 type HeaderProps = {
   onNewNote: () => void;
@@ -22,9 +17,9 @@ type HeaderProps = {
   onDeselect?: () => void;
   isIndexPage?: boolean;
 
+  // Sharing
   onToggleShare?: () => void;
   isShared?: boolean;
-  shareUrl?: string | null;
 };
 
 export default function Header({
@@ -38,16 +33,18 @@ export default function Header({
   isIndexPage = false,
   onToggleShare,
   isShared = false,
-  shareUrl,
 }: HeaderProps) {
   return (
     <header className="border-b pb-3 mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Heading */}
       <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left">
         Your Notes
       </h1>
 
+      {/* Actions */}
       <TooltipProvider>
         <div className="flex flex-wrap justify-center sm:justify-end gap-2 w-full sm:w-auto">
+          {/* View All Notes */}
           {onDeselect && !isIndexPage && (
             <Button
               variant="secondary"
@@ -58,6 +55,7 @@ export default function Header({
             </Button>
           )}
 
+          {/* New Note */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -77,45 +75,24 @@ export default function Header({
             )}
           </Tooltip>
 
+          {/* Share Button */}
           {onToggleShare && (
-            <>
-              {isShared && shareUrl ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      className="w-full sm:w-auto"
-                      aria-label="Share options"
-                    >
-                      Shared
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64">
-                    <DropdownMenuItem
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(shareUrl);
-                      }}
-                    >
-                      Copy Link
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onToggleShare}>
-                      Stop Sharing
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+            <Button
+              variant={isShared ? "secondary" : "outline"}
+              onClick={onToggleShare}
+              aria-label={isShared ? "Unshare this note" : "Share this note"}
+              className="w-full sm:w-auto flex items-center gap-2"
+            >
+              {isShared ? (
+                <Globe className="h-4 w-4" />
               ) : (
-                <Button
-                  variant="outline"
-                  onClick={onToggleShare}
-                  className="w-full sm:w-auto"
-                  aria-label="Share this note"
-                >
-                  Share
-                </Button>
+                <Lock className="h-4 w-4" />
               )}
-            </>
+              {isShared ? "Shared" : "Private"}
+            </Button>
           )}
-
+          
+          {/* Delete */}
           <Button
             variant="destructive"
             onClick={onDelete}
