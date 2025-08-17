@@ -92,15 +92,6 @@ export default function Header({
               >
                 {isShared ? "Unshare" : "Share"}
               </Button>
-
-              <Button
-                variant="outline"
-                onClick={onCopyShareUrl}
-                disabled={isCopyDisabled}
-                className="w-full sm:w-auto"
-              >
-                Copy URL
-              </Button>
             </>
           )}
 
