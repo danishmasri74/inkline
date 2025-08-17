@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Note } from "@/types/Notes";
-import appLogo from "@/assets/InkLine.png"; // replace with your logo path
-import { Button } from "@/components/ui/button"; // optional, for styled back button
+import appLogo from "@/assets/InkLine.png"; // your logo
 
 export default function ShareNotePage() {
   const { shareId } = useParams<{ shareId: string }>();
@@ -38,36 +37,26 @@ export default function ShareNotePage() {
     fetchNote();
   }, [shareId]);
 
-  if (loading) return <div className="p-6">Loading note...</div>;
-  if (error) return <div className="p-6">{error}</div>;
+  if (loading) return <div className="p-6 text-center">Loading note...</div>;
+  if (error) return <div className="p-6 text-center">{error}</div>;
   if (!note)
-    return <div className="p-6">This note is private or does not exist.</div>;
+    return <div className="p-6 text-center">This note is private or does not exist.</div>;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Top bar */}
-      <header className="flex items-center justify-between p-4 border-b bg-muted shadow-sm">
-        {/* Clickable logo goes to landing page */}
-        <Link to="/" className="flex items-center">
-          <img
-            src={appLogo}
-            alt="App Logo"
-            className="h-10 w-10 mr-3 cursor-pointer"
-          />
-          <span className="font-bold text-lg">MyNotes</span>
-        </Link>
-
-        {/* Optional small text link instead of a button */}
-        <Link to="/" className="text-sm text-blue-600 hover:underline">
-          Go to landing page
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Top bar like Notion */}
+      <header className="flex items-center p-4 border-b bg-white shadow-sm">
+        <Link to="/" className="flex items-center space-x-3">
+          <img src={appLogo} alt="App Logo" className="h-8 w-8" />
+          <span className="font-semibold text-lg">MyNotes</span>
         </Link>
       </header>
 
       {/* Note content */}
-      <main className="max-w-3xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">{note.title}</h1>
-        <pre className="whitespace-pre-wrap text-gray-800">{note.body}</pre>
-        <p className="mt-4 text-sm text-gray-500">
+      <main className="max-w-4xl mx-auto p-8">
+        <h1 className="text-3xl font-bold mb-6">{note.title}</h1>
+        <pre className="whitespace-pre-wrap text-gray-800 text-lg">{note.body}</pre>
+        <p className="mt-6 text-sm text-gray-500">
           Last updated: {new Date(note.updated_at).toLocaleString()}
         </p>
       </main>
