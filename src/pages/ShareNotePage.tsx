@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Note } from "@/types/Notes";
-import appLogo from "@/assets/InkLine.png";
+import appLogo from "@/assets/InkLine.png"; // replace with your logo path
+import { Button } from "@/components/ui/button"; // optional, for styled back button
 
 export default function ShareNotePage() {
   const { shareId } = useParams<{ shareId: string }>();
@@ -42,19 +43,28 @@ export default function ShareNotePage() {
   if (!note) return <div className="p-6">This note is private or does not exist.</div>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      {/* Header with clickable app icon */}
-      <header className="flex items-center mb-6">
-        <Link to="/">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Top bar */}
+      <header className="flex items-center justify-between p-4 border-b bg-muted shadow-sm">
+        <Link to="/" className="flex items-center">
           <img src={appLogo} alt="App Logo" className="h-10 w-10 mr-3 cursor-pointer" />
+          <span className="font-bold text-lg">MyNotes</span>
         </Link>
-        <h1 className="text-2xl font-bold">{note.title}</h1>
+        <Link to="/">
+          <Button variant="outline" size="sm">
+            Back to Home
+          </Button>
+        </Link>
       </header>
 
-      <pre className="whitespace-pre-wrap text-gray-800">{note.body}</pre>
-      <p className="mt-4 text-sm text-gray-500">
-        Last updated: {new Date(note.updated_at).toLocaleString()}
-      </p>
+      {/* Note content */}
+      <main className="max-w-3xl mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-4">{note.title}</h1>
+        <pre className="whitespace-pre-wrap text-gray-800">{note.body}</pre>
+        <p className="mt-4 text-sm text-gray-500">
+          Last updated: {new Date(note.updated_at).toLocaleString()}
+        </p>
+      </main>
     </div>
   );
 }
