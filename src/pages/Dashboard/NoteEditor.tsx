@@ -44,10 +44,10 @@ const MAX_CHARS = 4096;
 
 const NoteEditor = forwardRef(function NoteEditor(
   { note, onUpdate }: NoteEditorProps,
-  ref
+  _ref
 ) {
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(""); // NOTE: used for counters & saving; editor DOM is uncontrolled
   const [charCount, setCharCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -58,10 +58,21 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   const editorRef = useRef<HTMLDivElement>(null);
 
-  const updateBody = (html: string) => {
+  // Refs to track last-saved values to prevent unnecessary saves
+  const lastSavedTitleRef = useRef<string>("");
+  const lastSavedBodyRef = useRef<string>("");
+
+  // Prevent autosave right after loading a note
+  const initializingRef = useRef<boolean>(false);
+
+  const toPlainText = (html: string) => {
     const temp = document.createElement("div");
     temp.innerHTML = html;
-    const plainText = temp.innerText;
+    return temp.innerText;
+  };
+
+  const updateBodyFromHtml = (html: string) => {
+    const plainText = toPlainText(html);
 
     if (plainText.length <= MAX_CHARS) {
       setBody(html);
@@ -70,29 +81,29 @@ const NoteEditor = forwardRef(function NoteEditor(
         plainText.trim() === "" ? 0 : plainText.trim().split(/\s+/).length
       );
     } else {
-      const trimmed = plainText.slice(0, MAX_CHARS);
-      setBody(trimmed);
+      const trimmedText = plainText.slice(0, MAX_CHARS);
+      // replace DOM content with trimmed *text* to enforce limit
+      if (editorRef.current) {
+        editorRef.current.innerText = trimmedText;
+      }
+      setBody(trimmedText); // body will now be plain text; that’s ok — still saves fine
       setCharCount(MAX_CHARS);
       setWordCount(
-        trimmed.trim() === "" ? 0 : trimmed.trim().split(/\s+/).length
+        trimmedText.trim() === "" ? 0 : trimmedText.trim().split(/\s+/).length
       );
-      if (editorRef.current) {
-        editorRef.current.innerText = trimmed;
-      }
     }
   };
 
-  // Format text
+  // Formatting using document.execCommand (legacy but works for a simple editor)
   const formatText = (command: string) => {
     document.execCommand(command, false, "");
-    setTimeout(() => {
-      if (editorRef.current) {
-        updateBody(editorRef.current.innerHTML);
-      }
-    }, 0);
+    // After formatting, read from DOM
+    if (editorRef.current) {
+      updateBodyFromHtml(editorRef.current.innerHTML);
+    }
   };
 
-  // Handle Enter -> insert <br>
+  // On Enter, insert a line break instead of paragraph
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter") {
       document.execCommand("insertLineBreak");
@@ -100,68 +111,102 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   };
 
-  // Handle input with char limit
-  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    updateBody((e.target as HTMLDivElement).innerHTML);
+  // On typing/input, read the DOM (uncontrolled) and update state
+  const handleInput = () => {
+    if (editorRef.current) {
+      updateBodyFromHtml(editorRef.current.innerHTML);
+    }
   };
 
-  // Load note only when switching to a different note
+  // Load/switch note: set DOM content once and seed state/refs
   useEffect(() => {
-    if (note) {
-      setTitle(note.title);
-      setBody(note.body);
+    if (!note) return;
 
-      const temp = document.createElement("div");
-      temp.innerHTML = note.body;
-      const plainText = temp.innerText;
-      setCharCount(plainText.length);
-      setWordCount(
-        plainText.trim() === "" ? 0 : plainText.trim().split(/\s+/).length
-      );
+    initializingRef.current = true; // suppress autosave caused by setting initial content
+
+    setTitle(note.title);
+    lastSavedTitleRef.current = note.title;
+
+    // set editor DOM content directly (uncontrolled)
+    if (editorRef.current) {
+      editorRef.current.innerHTML = note.body || "";
     }
-  }, [note?.id]); // ⬅️ only run when note id changes
 
-  // Auto-save
+    setBody(note.body || "");
+    const plain = toPlainText(note.body || "");
+    setCharCount(plain.length);
+    setWordCount(plain.trim() === "" ? 0 : plain.trim().split(/\s+/).length);
+
+    lastSavedBodyRef.current = note.body || "";
+
+    // allow autosave after this tick
+    const t = setTimeout(() => {
+      initializingRef.current = false;
+    }, 0);
+
+    return () => clearTimeout(t);
+  }, [note?.id]);
+
+  // Debounced autosave ONLY when content actually changed from last saved values
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (note && (title !== note.title || body !== note.body)) {
-        setSaveStatus("saving");
-        const cleanHTML = DOMPurify.sanitize(body);
-        supabase
-          .from("notes")
-          .update({ title, body: cleanHTML })
-          .eq("id", note.id)
-          .select()
-          .single()
-          .then(({ data, error }) => {
-            if (error) {
-              console.error("Auto-save failed:", error.message);
-            } else if (data) {
-              // Only update metadata, not body/title
-              onUpdate({ ...note, updated_at: data.updated_at });
-              setSaveStatus("saved");
-              setTimeout(() => setSaveStatus("idle"), 2000);
-            }
-          });
+    if (!note) return;
+
+    // If we're initializing (just loaded a note), don't autosave
+    if (initializingRef.current) return;
+
+    const deb = setTimeout(async () => {
+      // sanitize body before comparing/saving to keep comparisons consistent
+      const sanitized = DOMPurify.sanitize(body);
+
+      const titleChanged = title !== lastSavedTitleRef.current;
+      const bodyChanged = sanitized !== lastSavedBodyRef.current;
+
+      if (!titleChanged && !bodyChanged) return; // nothing really changed
+
+      setSaveStatus("saving");
+
+      const { data, error } = await supabase
+        .from("notes")
+        .update({ title, body: sanitized })
+        .eq("id", note.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Auto-save failed:", error.message);
+        setSaveStatus("idle");
+        return;
       }
-    }, 800);
-    return () => clearTimeout(timeout);
-  }, [title, body, note]);
 
-  // Scroll button
+      // Update last-saved refs to current values
+      lastSavedTitleRef.current = title;
+      lastSavedBodyRef.current = sanitized;
+
+      // Only sync metadata to parent to avoid resetting DOM/caret
+      if (data) {
+        onUpdate({ ...note, updated_at: data.updated_at });
+      }
+
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 1200);
+    }, 800);
+
+    return () => clearTimeout(deb);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, body, note?.id]); // run when user actually edits, not when parent re-sends same note
+
+  // Scroll-to-top button visibility
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 200);
-    };
+    const handleScroll = () => setShowScrollTop(window.scrollY > 200);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Font size storage
+  // Font size persistence
   useEffect(() => {
-    const storedSize = localStorage.getItem(LOCAL_STORAGE_KEY) as FontSizeLevel;
-    if (FONT_SIZES.includes(storedSize)) {
-      setFontSize(storedSize);
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY) as FontSizeLevel;
+    if (stored && (FONT_SIZES as readonly string[]).includes(stored)) {
+      setFontSize(stored as FontSizeLevel);
     }
   }, []);
 
@@ -185,9 +230,7 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   const downloadAsTxt = () => {
     if (!note) return;
-    const temp = document.createElement("div");
-    temp.innerHTML = body;
-    const plainText = temp.innerText;
+    const plainText = toPlainText(editorRef.current?.innerHTML || body || "");
     const content = `Title: ${title}\n\n${plainText}`;
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -311,7 +354,9 @@ const NoteEditor = forwardRef(function NoteEditor(
                   variant="outline"
                   size="sm"
                   onClick={downloadAsTxt}
-                  disabled={!note || body.trim() === ""}
+                  disabled={
+                    !note || (editorRef.current?.innerText?.trim() ?? "") === ""
+                  }
                   className="flex items-center gap-1"
                 >
                   <Download size={16} /> .txt
@@ -332,13 +377,12 @@ const NoteEditor = forwardRef(function NoteEditor(
         className="text-3xl shadow-none mb-6 font-bold font-typewriter bg-transparent border-none p-0"
       />
 
-      {/* Rich Text Body */}
+      {/* Rich Text Body — UNCONTROLLED (no dangerouslySetInnerHTML here) */}
       <div
         ref={editorRef}
         contentEditable
         data-gramm="false"
         data-placeholder="Start typing your note..."
-        dangerouslySetInnerHTML={{ __html: body }}
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         style={{
