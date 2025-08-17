@@ -5,7 +5,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Share2, Globe, Lock } from "lucide-react";
 
 type HeaderProps = {
   onNewNote: () => void;
@@ -20,6 +19,9 @@ type HeaderProps = {
   // Sharing
   onToggleShare?: () => void;
   isShared?: boolean;
+  shareUrl?: string | null;
+  onCopyShareUrl?: () => void;
+  isCopyDisabled?: boolean;
 };
 
 export default function Header({
@@ -33,6 +35,9 @@ export default function Header({
   isIndexPage = false,
   onToggleShare,
   isShared = false,
+  shareUrl,
+  onCopyShareUrl,
+  isCopyDisabled = true,
 }: HeaderProps) {
   return (
     <header className="border-b pb-3 mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -44,6 +49,7 @@ export default function Header({
       {/* Actions */}
       <TooltipProvider>
         <div className="flex flex-wrap justify-center sm:justify-end gap-2 w-full sm:w-auto">
+
           {/* View All Notes */}
           {onDeselect && !isIndexPage && (
             <Button
@@ -75,23 +81,29 @@ export default function Header({
             )}
           </Tooltip>
 
-          {/* Share Button */}
+          {/* Share + Copy */}
           {onToggleShare && (
-            <Button
-              variant={isShared ? "secondary" : "outline"}
-              onClick={onToggleShare}
-              aria-label={isShared ? "Unshare this note" : "Share this note"}
-              className="w-full sm:w-auto flex items-center gap-2"
-            >
-              {isShared ? (
-                <Globe className="h-4 w-4" />
-              ) : (
-                <Lock className="h-4 w-4" />
-              )}
-              {isShared ? "Shared" : "Private"}
-            </Button>
+            <>
+              <Button
+                variant={isShared ? "secondary" : "outline"}
+                onClick={onToggleShare}
+                aria-label={isShared ? "Unshare this note" : "Share this note"}
+                className="w-full sm:w-auto"
+              >
+                {isShared ? "Unshare" : "Share"}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={onCopyShareUrl}
+                disabled={isCopyDisabled}
+                className="w-full sm:w-auto"
+              >
+                Copy URL
+              </Button>
+            </>
           )}
-          
+
           {/* Delete */}
           <Button
             variant="destructive"

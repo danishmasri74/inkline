@@ -11,15 +11,6 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NotesIndex from "./NotesIndex";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-
 export default function NotesPage({ session }: { session: Session }) {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -28,12 +19,15 @@ export default function NotesPage({ session }: { session: Session }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>([]);
-  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(() => () => {});
+  const [selectedTableNoteIds, setSelectedTableNoteIds] = useState<string[]>(
+    []
+  );
+  const [refetchTableNotes, setRefetchTableNotes] = useState<() => void>(
+    () => () => {}
+  );
 
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const noteEditorRef = useRef<{
     focusNextLine: () => void;
@@ -100,7 +94,10 @@ export default function NotesPage({ session }: { session: Session }) {
   };
 
   const handleDeleteNote = async () => {
-    const idsToDelete = selectedNoteId ? [selectedNoteId] : selectedTableNoteIds;
+    const idsToDelete = selectedNoteId
+      ? [selectedNoteId]
+      : selectedTableNoteIds;
+
     if (idsToDelete.length === 0) return;
 
     const { error } = await supabase
@@ -130,9 +127,12 @@ export default function NotesPage({ session }: { session: Session }) {
       .in("id", selectedTableNoteIds)
       .eq("user_id", userId);
 
-    if (error) return console.error("Error deleting selected notes:", error.message);
+    if (error)
+      return console.error("Error deleting selected notes:", error.message);
 
-    setNotes((prev) => prev.filter((note) => !selectedTableNoteIds.includes(note.id)));
+    setNotes((prev) =>
+      prev.filter((note) => !selectedTableNoteIds.includes(note.id))
+    );
     setSelectedTableNoteIds([]);
     refetchTableNotes();
   };
@@ -168,10 +168,8 @@ export default function NotesPage({ session }: { session: Session }) {
       const url = `${window.location.origin}/share/${data.share_id}`;
       setShareUrl(url);
       setCopied(false);
-      setShareDialogOpen(true); // open modal automatically
     } else {
       setShareUrl(null);
-      setShareDialogOpen(false);
     }
   };
 
@@ -179,14 +177,13 @@ export default function NotesPage({ session }: { session: Session }) {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
-      {/* Mobile Sidebar */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          <div className="relative w-72 max-w-[80vw] h-full bg-background shadow-lg">
+          <div className="relative w-72 max-w-[80vw] h-full bg-background shadow-lg transition-transform duration-300 ease-in-out transform translate-x-0">
             <Sidebar
               notes={notes}
               selectedId={selectedNoteId}
@@ -202,7 +199,6 @@ export default function NotesPage({ session }: { session: Session }) {
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar
           notes={notes}
@@ -215,7 +211,6 @@ export default function NotesPage({ session }: { session: Session }) {
       </div>
 
       <div className="flex-1 p-4 md:p-6 relative md:ml-64">
-        {/* Mobile Header */}
         <div className="md:hidden mb-4 flex justify-between items-center">
           <Button
             variant="ghost"
@@ -238,36 +233,34 @@ export default function NotesPage({ session }: { session: Session }) {
           isIndexPage={!selectedNoteId}
           onToggleShare={selectedNote ? handleToggleShare : undefined}
           isShared={selectedNote?.is_public}
+          shareUrl={shareUrl}
+          isCopyDisabled={!shareUrl}
+          onCopyShareUrl={async () => {
+            if (shareUrl) {
+              await navigator.clipboard.writeText(shareUrl);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }
+          }}
         />
-
-        {/* Share Dialog */}
-        <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Shareable Link</DialogTitle>
-              <DialogDescription>
-                Anyone with this link can view your note.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex items-center justify-between gap-2 border rounded-md px-3 py-2">
-              <span className="truncate text-sm">{shareUrl}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(shareUrl || "");
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-              >
-                {copied ? "Copied!" : "Copy"}
-              </Button>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => setShareDialogOpen(false)}>Close</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        
+        {/* Share Link Panel */}
+        {shareUrl && (
+          <div className="flex items-center justify-between gap-2 mb-4 p-3 border rounded-lg bg-muted">
+            <span className="truncate text-sm">{shareUrl}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await navigator.clipboard.writeText(shareUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+            >
+              {copied ? "Copied!" : "Copy"}
+            </Button>
+          </div>
+        )}
 
         {selectedNote ? (
           <>
@@ -281,20 +274,23 @@ export default function NotesPage({ session }: { session: Session }) {
               </div>
             </div>
 
-            {/* Floating Navigation */}
             <div
               className="fixed z-40 hidden md:flex flex-row gap-2 p-2 border border-neutral-300 rounded-md bg-[#f6f4ed] shadow-md"
-              style={{ bottom: "5rem", right: "2rem" }}
+              style={{
+                bottom: "5rem",
+                right: "2rem",
+              }}
             >
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => noteEditorRef.current?.focusPrevLine()}
                 disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-10 h-10 font-mono text-lg"
+                className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
               >
                 ←
               </Button>
+
               <Button
                 variant="outline"
                 size="icon"
@@ -303,19 +299,21 @@ export default function NotesPage({ session }: { session: Session }) {
                   noteEditorRef.current?.getCurrentLine?.() ===
                   (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
                 }
-                className="w-10 h-10 font-mono text-lg"
+                className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
               >
                 →
               </Button>
             </div>
           </>
         ) : (
-          <NotesIndex
-            selectedIds={selectedTableNoteIds}
-            setSelectedIds={setSelectedTableNoteIds}
-            notes={notes}
-            onSelectNote={handleSelectNote}
-          />
+          <div className="w-full">
+            <NotesIndex
+              selectedIds={selectedTableNoteIds}
+              setSelectedIds={setSelectedTableNoteIds}
+              notes={notes}
+              onSelectNote={handleSelectNote}
+            />
+          </div>
         )}
       </div>
     </div>
