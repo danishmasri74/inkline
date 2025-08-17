@@ -10,6 +10,7 @@ import ResetPassword from "./pages/Auth/ResetPassword";
 import NotesPage from "./pages/Dashboard/NotesPage";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import ShareNotePage from "./pages/ShareNotePage";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -49,6 +50,7 @@ export default function App() {
         element={!session ? <SignUp /> : <Navigate to="/dashboard" replace />}
       />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/share/:shareId" element={<ShareNotePage />} />
 
       {/* Protected Routes */}
       <Route

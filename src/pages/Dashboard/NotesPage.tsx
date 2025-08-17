@@ -144,6 +144,30 @@ export default function NotesPage({ session }: { session: Session }) {
     );
   };
 
+  const handleToggleShare = async () => {
+    if (!selectedNote) return;
+
+    const newStatus = !selectedNote.is_public;
+    const { data, error } = await supabase
+      .from("notes")
+      .update({ is_public: newStatus })
+      .eq("id", selectedNote.id)
+      .select()
+      .single();
+
+    if (error) return console.error("Error toggling share:", error.message);
+
+    setNotes((prev) =>
+      prev.map((n) => (n.id === selectedNote.id ? { ...n, ...data } : n))
+    );
+
+    if (newStatus) {
+      const shareUrl = `${window.location.origin}/share/${data.share_id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      alert("Share link copied: " + shareUrl);
+    }
+  };
+
   const selectedNote = notes.find((note) => note.id === selectedNoteId) || null;
 
   return (
@@ -163,7 +187,6 @@ export default function NotesPage({ session }: { session: Session }) {
                 setMobileSidebarOpen(false);
               }}
               onLogout={handleLogout}
-              loading={loading}
               userEmail={session.user.email!}
               onClose={() => setMobileSidebarOpen(false)}
             />
@@ -177,7 +200,6 @@ export default function NotesPage({ session }: { session: Session }) {
           selectedId={selectedNoteId}
           onSelect={handleSelectNote}
           onLogout={handleLogout}
-          loading={loading}
           userEmail={session.user.email!}
           onDeselect={() => handleSelectNote(null)}
         />
@@ -204,6 +226,8 @@ export default function NotesPage({ session }: { session: Session }) {
           noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
           onDeselect={() => handleSelectNote(null)}
           isIndexPage={!selectedNoteId}
+          onToggleShare={selectedNote ? handleToggleShare : undefined}
+          isShared={selectedNote?.is_public}
         />
 
         {selectedNote ? (

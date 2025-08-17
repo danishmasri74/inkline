@@ -13,8 +13,12 @@ type HeaderProps = {
   isNewDisabled: boolean;
   noteLimitReachedMessage?: string;
   showTableMode?: boolean;
-  onDeselect?: () => void; // <-- Added this prop
-  isIndexPage?: boolean;   // <-- Optional prop to conditionally hide button
+  onDeselect?: () => void;
+  isIndexPage?: boolean;
+
+  // New props for sharing
+  onToggleShare?: () => void;
+  isShared?: boolean;
 };
 
 export default function Header({
@@ -25,7 +29,9 @@ export default function Header({
   noteLimitReachedMessage,
   showTableMode,
   onDeselect,
-  isIndexPage = false, // Default to false
+  isIndexPage = false,
+  onToggleShare,
+  isShared = false,
 }: HeaderProps) {
   return (
     <header className="border-b pb-3 mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -34,10 +40,10 @@ export default function Header({
         Your Notes
       </h1>
 
-      {/* Actions with TooltipProvider */}
+      {/* Actions */}
       <TooltipProvider>
         <div className="flex flex-wrap justify-center sm:justify-end gap-2 w-full sm:w-auto">
-          {/* View All Notes Button (only show when not on Index) */}
+          {/* View All Notes */}
           {onDeselect && !isIndexPage && (
             <Button
               variant="secondary"
@@ -48,6 +54,7 @@ export default function Header({
             </Button>
           )}
 
+          {/* New Note */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -67,6 +74,19 @@ export default function Header({
             )}
           </Tooltip>
 
+          {/* Share Button */}
+          {onToggleShare && (
+            <Button
+              variant={isShared ? "secondary" : "outline"}
+              onClick={onToggleShare}
+              aria-label={isShared ? "Unshare this note" : "Share this note"}
+              className="w-full sm:w-auto"
+            >
+              {isShared ? "Unshare" : "Share"}
+            </Button>
+          )}
+
+          {/* Delete */}
           <Button
             variant="destructive"
             onClick={onDelete}
