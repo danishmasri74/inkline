@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Note } from "@/types/Notes";
 import appLogo from "@/assets/InkLine.png";
-import { Loader2, AlertCircle, FileQuestion } from "lucide-react";
+import { Loader2, AlertCircle, FileQuestion, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DOMPurify from "dompurify";
@@ -13,6 +13,7 @@ export default function ShareNotePage() {
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -40,6 +41,16 @@ export default function ShareNotePage() {
 
     fetchNote();
   }, [shareId]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   // Notion-like Fallback Wrapper
   const Fallback = ({
@@ -96,11 +107,20 @@ export default function ShareNotePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
-      <header className="flex items-center p-4 border-b bg-muted/40">
+      <header className="flex items-center justify-between p-4 border-b bg-muted/40">
         <Link to="/" className="flex items-center space-x-3">
           <img src={appLogo} alt="App Logo" className="h-7 w-7" />
           <span className="font-semibold text-base">MyNotes</span>
         </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopyLink}
+          className="flex items-center gap-2 rounded-lg"
+        >
+          {copied ? <Check size={16} /> : <Copy size={16} />}
+          {copied ? "Copied!" : "Copy Link"}
+        </Button>
       </header>
 
       {/* Note content */}
