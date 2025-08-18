@@ -6,6 +6,7 @@ import appLogo from "@/assets/InkLine.png";
 import { Loader2, AlertCircle, FileQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import DOMPurify from "dompurify";
 
 export default function ShareNotePage() {
   const { shareId } = useParams<{ shareId: string }>();
@@ -105,9 +106,10 @@ export default function ShareNotePage() {
       {/* Note content */}
       <main className="max-w-3xl mx-auto p-8">
         <h1 className="text-3xl font-bold mb-6">{note.title}</h1>
-        <div className="prose prose-neutral dark:prose-invert max-w-none">
-          <p className="whitespace-pre-wrap">{note.body}</p>
-        </div>
+        <div
+          className="prose prose-neutral dark:prose-invert max-w-none"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.body) }}
+        />
         <p className="mt-8 text-sm text-muted-foreground">
           Last updated {new Date(note.updated_at).toLocaleString()}
         </p>
