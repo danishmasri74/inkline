@@ -137,7 +137,7 @@ export default function ShareNotePage() {
           {note.title}
         </h1>
         <div
-          className="prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap"
+          className="prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-all"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.body) }}
         />
         <p className="mt-6 sm:mt-8 text-xs sm:text-sm text-muted-foreground">
