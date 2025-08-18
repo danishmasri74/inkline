@@ -47,7 +47,7 @@ const NoteEditor = forwardRef(function NoteEditor(
   _ref
 ) {
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState(""); // NOTE: used for counters & saving; editor DOM is uncontrolled
+  const [body, setBody] = useState(""); // sanitized HTML always
   const [charCount, setCharCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -72,21 +72,21 @@ const NoteEditor = forwardRef(function NoteEditor(
   };
 
   const updateBodyFromHtml = (html: string) => {
-    const plainText = toPlainText(html);
+    const sanitized = DOMPurify.sanitize(html);
+    const plainText = toPlainText(sanitized);
 
     if (plainText.length <= MAX_CHARS) {
-      setBody(html);
+      setBody(sanitized); // ✅ always sanitized
       setCharCount(plainText.length);
       setWordCount(
         plainText.trim() === "" ? 0 : plainText.trim().split(/\s+/).length
       );
     } else {
       const trimmedText = plainText.slice(0, MAX_CHARS);
-      // replace DOM content with trimmed *text* to enforce limit
       if (editorRef.current) {
         editorRef.current.innerText = trimmedText;
       }
-      setBody(trimmedText); // body will now be plain text; that’s ok — still saves fine
+      setBody(trimmedText);
       setCharCount(MAX_CHARS);
       setWordCount(
         trimmedText.trim() === "" ? 0 : trimmedText.trim().split(/\s+/).length
@@ -94,10 +94,9 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   };
 
-  // Formatting using document.execCommand (legacy but works for a simple editor)
+  // Formatting using document.execCommand
   const formatText = (command: string) => {
     document.execCommand(command, false, "");
-    // After formatting, read from DOM
     if (editorRef.current) {
       updateBodyFromHtml(editorRef.current.innerHTML);
     }
@@ -111,63 +110,48 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   };
 
-  // On typing/input, read the DOM (uncontrolled) and update state
+  // On typing/input
   const handleInput = () => {
     if (editorRef.current) {
       updateBodyFromHtml(editorRef.current.innerHTML);
     }
   };
 
-  // Load/switch note: set DOM content once and seed state/refs
+  // Load/switch note
   useEffect(() => {
     if (!note) return;
 
-    initializingRef.current = true; // suppress autosave caused by setting initial content
+    initializingRef.current = true;
 
     setTitle(note.title);
     lastSavedTitleRef.current = note.title;
 
-    // set editor DOM content directly (uncontrolled)
     if (editorRef.current) {
       editorRef.current.innerHTML = note.body || "";
     }
 
-    setBody(note.body || "");
-    const plain = toPlainText(note.body || "");
-    setCharCount(plain.length);
-    setWordCount(plain.trim() === "" ? 0 : plain.trim().split(/\s+/).length);
+    updateBodyFromHtml(note.body || "");
+    lastSavedBodyRef.current = DOMPurify.sanitize(note.body || "");
 
-    lastSavedBodyRef.current = note.body || "";
-
-    // allow autosave after this tick
-    const t = setTimeout(() => {
-      initializingRef.current = false;
-    }, 0);
-
-    return () => clearTimeout(t);
+    initializingRef.current = false;
   }, [note?.id]);
 
-  // Debounced autosave ONLY when content actually changed from last saved values
+  // Debounced autosave
   useEffect(() => {
     if (!note) return;
-
-    // If we're initializing (just loaded a note), don't autosave
     if (initializingRef.current) return;
 
     const deb = setTimeout(async () => {
-      // sanitize body before comparing/saving to keep comparisons consistent
-      const sanitized = DOMPurify.sanitize(body);
-
       const titleChanged = title !== lastSavedTitleRef.current;
-      const bodyChanged = sanitized !== lastSavedBodyRef.current;
+      const bodyChanged = body !== lastSavedBodyRef.current;
 
-      if (!titleChanged && !bodyChanged) return; // nothing really changed
+      if (!titleChanged && !bodyChanged) return;
 
       setSaveStatus("saving");
 
       const { data, error } = await supabase
         .from("notes")
-        .update({ title, body: sanitized })
+        .update({ title, body })
         .eq("id", note.id)
         .select()
         .single();
@@ -178,11 +162,9 @@ const NoteEditor = forwardRef(function NoteEditor(
         return;
       }
 
-      // Update last-saved refs to current values
       lastSavedTitleRef.current = title;
-      lastSavedBodyRef.current = sanitized;
+      lastSavedBodyRef.current = body;
 
-      // Only sync metadata to parent to avoid resetting DOM/caret
       if (data) {
         onUpdate({ ...note, updated_at: data.updated_at });
       }
@@ -192,8 +174,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     }, 800);
 
     return () => clearTimeout(deb);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, body, note?.id]); // run when user actually edits, not when parent re-sends same note
+  }, [title, body, note?.id, onUpdate]);
 
   // Scroll-to-top button visibility
   useEffect(() => {
@@ -377,7 +358,7 @@ const NoteEditor = forwardRef(function NoteEditor(
         className="text-3xl shadow-none mb-6 font-bold font-typewriter bg-transparent border-none p-0"
       />
 
-      {/* Rich Text Body — UNCONTROLLED (no dangerouslySetInnerHTML here) */}
+      {/* Rich Text Body */}
       <div
         ref={editorRef}
         contentEditable
