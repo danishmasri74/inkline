@@ -3,6 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Note } from "@/types/Notes";
 import appLogo from "@/assets/InkLine.png"; // your logo
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, AlertCircle, FileQuestion } from "lucide-react";
 
 export default function ShareNotePage() {
   const { shareId } = useParams<{ shareId: string }>();
@@ -37,12 +40,52 @@ export default function ShareNotePage() {
     fetchNote();
   }, [shareId]);
 
-  if (loading) return <div className="p-6 text-center">Loading note...</div>;
-  if (error) return <div className="p-6 text-center">{error}</div>;
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading note...</span>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="max-w-md w-full shadow-lg">
+          <CardContent className="flex flex-col items-center p-8">
+            <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
+            <Alert className="w-full mb-4">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            <Link
+              to="/"
+              className="mt-2 text-sm font-medium text-blue-600 hover:underline"
+            >
+              Back to Home
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+
   if (!note)
     return (
-      <div className="p-6 text-center">
-        This note is private or does not exist.
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="max-w-md w-full shadow-lg">
+          <CardContent className="flex flex-col items-center p-8">
+            <FileQuestion className="h-10 w-10 text-gray-400 mb-4" />
+            <p className="text-center text-muted-foreground">
+              This note is private or does not exist.
+            </p>
+            <Link
+              to="/"
+              className="mt-4 text-sm font-medium text-blue-600 hover:underline"
+            >
+              Back to Home
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
 
