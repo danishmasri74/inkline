@@ -7,6 +7,7 @@ import { isToday, isYesterday } from "date-fns";
 import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
 
 type SidebarProps = {
   notes: Note[];
@@ -157,18 +158,37 @@ export default function Sidebar({
 
       {/* Footer */}
       <Separator />
-      <div className="p-4 flex items-center gap-3 text-sm">
-        <Avatar className="h-8 w-8 border">
-          <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col truncate">
-          <span className="truncate">{userEmail}</span>
-          <button
-            onClick={onLogout}
-            className="text-xs text-muted-foreground hover:underline text-left"
-          >
-            Log out
-          </button>
+      <div className="p-4 space-y-3">
+        {/* Notes usage progress */}
+        <div>
+          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+            <span>Notes</span>
+            <span>{notes.length}/100</span>
+          </div>
+          <Progress
+            value={(notes.length / 100) * 100}
+            className={`h-2 rounded-full ${
+              notes.length >= 90
+                ? "bg-destructive/20 [&>div]:bg-destructive"
+                : ""
+            }`}
+          />
+        </div>
+
+        {/* User info */}
+        <div className="flex items-center gap-3 text-sm">
+          <Avatar className="h-8 w-8 border">
+            <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col truncate">
+            <span className="truncate">{userEmail}</span>
+            <button
+              onClick={onLogout}
+              className="text-xs text-muted-foreground hover:underline text-left"
+            >
+              Log out
+            </button>
+          </div>
         </div>
       </div>
     </aside>
