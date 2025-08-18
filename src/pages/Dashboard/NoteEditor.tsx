@@ -166,9 +166,14 @@ const NoteEditor = forwardRef(function NoteEditor(
       lastSavedBodyRef.current = body;
 
       if (data) {
-        onUpdate({ ...note, updated_at: data.updated_at });
+        onUpdate({
+          ...note,
+          title, // ✅ sync latest title
+          body, // ✅ sync latest body
+          updated_at: data.updated_at,
+        });
       }
-
+      
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 1200);
     }, 800);
