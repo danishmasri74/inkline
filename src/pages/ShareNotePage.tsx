@@ -8,15 +8,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DOMPurify from "dompurify";
 
-function calculateReadingTime(html: string): string {
+function calculateReadingTime(html: string): {
+  readingTime: string;
+  words: number;
+} {
   // Strip HTML tags and get plain text
   const text = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
-  const words = text.trim().split(/\s+/).length;
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+
+  if (words < 50) {
+    return { readingTime: "Quick read", words };
+  }
 
   const wordsPerMinute = 225; // average reading speed
   const minutes = Math.max(1, Math.ceil(words / wordsPerMinute));
+  const readingTime = minutes === 1 ? "1 min read" : `${minutes} mins read`;
 
-  return `${minutes} min read`;
+  return { readingTime, words };
 }
 
 export default function ShareNotePage() {
@@ -26,6 +34,7 @@ export default function ShareNotePage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [readingTime, setReadingTime] = useState<string | null>(null);
+  const [wordCount, setWordCount] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -47,7 +56,9 @@ export default function ShareNotePage() {
         setError("This note is private or does not exist.");
       } else if (data) {
         setNote(data);
-        setReadingTime(calculateReadingTime(data.body));
+        const { readingTime, words } = calculateReadingTime(data.body);
+        setReadingTime(readingTime);
+        setWordCount(words);
       }
       setLoading(false);
     };
@@ -125,6 +136,10 @@ export default function ShareNotePage() {
       />
     );
 
+  // Format numbers with commas (e.g., 2,350)
+  const formatNumber = (num: number) =>
+    new Intl.NumberFormat("en-US").format(num);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
@@ -150,8 +165,11 @@ export default function ShareNotePage() {
           {note.title}
         </h1>
         <p className="text-sm text-muted-foreground mb-6">
-          {readingTime} • Last updated{" "}
-          {new Date(note.updated_at).toLocaleString()}
+          {readingTime}
+          {wordCount !== null &&
+            wordCount >= 50 &&
+            ` (${formatNumber(wordCount)} words)`}{" "}
+          • Last updated {new Date(note.updated_at).toLocaleString()}
         </p>
         <div
           className="prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-all"
