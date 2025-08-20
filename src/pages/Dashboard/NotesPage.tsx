@@ -26,14 +26,6 @@ export default function NotesPage({ session }: { session: Session }) {
     () => () => {}
   );
   const [copied, setCopied] = useState(false);
-
-  const noteEditorRef = useRef<{
-    focusNextLine: () => void;
-    focusPrevLine: () => void;
-    getCurrentLine: () => number;
-    getLineCount: () => number;
-  } | null>(null);
-
   const userId = session.user.id;
   const noteLimit = 100;
 
@@ -260,43 +252,8 @@ export default function NotesPage({ session }: { session: Session }) {
           <>
             <div className="flex justify-center">
               <div className="w-full max-w-[85ch]">
-                <NoteEditor
-                  ref={noteEditorRef}
-                  note={selectedNote}
-                  onUpdate={handleNoteUpdate}
-                />
+                <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
               </div>
-            </div>
-
-            <div
-              className="fixed z-40 hidden md:flex flex-row gap-2 p-2 border border-neutral-300 rounded-md bg-[#f6f4ed] shadow-md"
-              style={{
-                bottom: "5rem",
-                right: "2rem",
-              }}
-            >
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => noteEditorRef.current?.focusPrevLine()}
-                disabled={noteEditorRef.current?.getCurrentLine?.() === 0}
-                className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
-              >
-                ←
-              </Button>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => noteEditorRef.current?.focusNextLine()}
-                disabled={
-                  noteEditorRef.current?.getCurrentLine?.() ===
-                  (noteEditorRef.current?.getLineCount?.() ?? 1) - 1
-                }
-                className="w-10 h-10 font-mono text-lg border border-neutral-400 bg-[#fdfbf5] text-neutral-800 hover:bg-[#f0eee6] active:translate-y-[1px] active:shadow-inner transition"
-              >
-                →
-              </Button>
             </div>
           </>
         ) : (
