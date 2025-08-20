@@ -118,7 +118,7 @@ export default function ShareNotePage() {
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b bg-muted/40">
         <Link to="/" className="flex items-center space-x-3">
           <img src={appLogo} alt="App Logo" className="h-7 w-7" />
-          <span className="font-semibold text-base sm:text-lg">MyNotes</span>
+          <span className="font-semibold text-base sm:text-lg">InkLine</span>
         </Link>
         <Button
           variant="outline"
