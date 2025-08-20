@@ -9,16 +9,20 @@ import {
   FileQuestion,
   Copy,
   Check,
-  Play,
-  Pause,
-  Square,
   Volume2,
+  Pause,
+  Play,
+  Square,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DOMPurify from "dompurify";
 
-function calculateReadingTime(html: string): { readingTime: string; words: number } {
+// --- Reading Time Utility ---
+function calculateReadingTime(html: string): {
+  readingTime: string;
+  words: number;
+} {
   const text = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
   const words = text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -39,14 +43,15 @@ export default function ShareNotePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
   const [readingTime, setReadingTime] = useState<string | null>(null);
   const [wordCount, setWordCount] = useState<number | null>(null);
 
-  // TTS state
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  // --- TTS States ---
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>("");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -76,24 +81,21 @@ export default function ShareNotePage() {
     };
 
     fetchNote();
+  }, [shareId]);
 
-    // load voices
+  // Load available voices for TTS
+  useEffect(() => {
     const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-      if (!selectedVoice && availableVoices.length > 0) {
-        setSelectedVoice(availableVoices[0].name);
+      const v = window.speechSynthesis.getVoices();
+      setVoices(v);
+      if (v.length > 0 && !selectedVoice) {
+        setSelectedVoice(v[0].name);
       }
     };
 
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    // cleanup speech
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, [shareId]);
+  }, [selectedVoice]);
 
   const handleCopyLink = async () => {
     try {
@@ -105,34 +107,37 @@ export default function ShareNotePage() {
     }
   };
 
-  const getPlainText = (html: string) =>
-    DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
-
+  // --- TTS Handlers ---
   const handleSpeak = () => {
     if (!note) return;
-    const text = getPlainText(note.body);
 
-    if (!isSpeaking) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = 1;
-
-      // apply selected voice
-      const voice = voices.find((v) => v.name === selectedVoice);
-      if (voice) utterance.voice = voice;
-
-      utterance.onend = () => setIsSpeaking(false);
-
-      window.speechSynthesis.speak(utterance);
-      setIsSpeaking(true);
-      setIsPaused(false);
-    } else if (isPaused) {
-      window.speechSynthesis.resume();
-      setIsPaused(false);
-    } else {
+    if (isSpeaking && !isPaused) {
       window.speechSynthesis.pause();
       setIsPaused(true);
+      return;
     }
+
+    if (isSpeaking && isPaused) {
+      window.speechSynthesis.resume();
+      setIsPaused(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(
+      DOMPurify.sanitize(note.body, { ALLOWED_TAGS: [] })
+    );
+
+    const voice = voices.find((v) => v.name === selectedVoice);
+    if (voice) utterance.voice = voice;
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setIsPaused(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
+    setIsPaused(false);
   };
 
   const handleStop = () => {
@@ -141,10 +146,7 @@ export default function ShareNotePage() {
     setIsPaused(false);
   };
 
-  const formatNumber = (num: number) =>
-    new Intl.NumberFormat("en-US").format(num);
-
-  // Fallback UI
+  // --- Fallback UI ---
   const Fallback = ({
     icon,
     title,
@@ -185,7 +187,9 @@ export default function ShareNotePage() {
   if (error)
     return (
       <Fallback
-        icon={<AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-destructive" />}
+        icon={
+          <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-destructive" />
+        }
         title="Unable to load note"
         description={error}
       />
@@ -194,11 +198,16 @@ export default function ShareNotePage() {
   if (!note)
     return (
       <Fallback
-        icon={<FileQuestion className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />}
+        icon={
+          <FileQuestion className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
+        }
         title="Note not found"
         description="This note is private or does not exist."
       />
     );
+
+  const formatNumber = (num: number) =>
+    new Intl.NumberFormat("en-US").format(num);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -208,26 +217,28 @@ export default function ShareNotePage() {
           <img src={appLogo} alt="App Logo" className="h-7 w-7" />
           <span className="font-semibold text-base sm:text-lg">InkLine</span>
         </Link>
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopyLink}
-            className="flex items-center justify-center gap-2 rounded-lg"
+            className="flex items-center justify-center gap-2 rounded-xl w-full sm:w-auto"
           >
             {copied ? <Check size={16} /> : <Copy size={16} />}
             {copied ? "Copied!" : "Copy Link"}
           </Button>
 
-          {/* Voice selector */}
           <select
-            className="border rounded-lg px-2 py-1 text-sm bg-background"
+            className="border rounded-xl px-3 py-2 text-sm bg-background w-full sm:w-auto"
             value={selectedVoice}
             onChange={(e) => setSelectedVoice(e.target.value)}
           >
             {voices.map((voice) => (
               <option key={voice.name} value={voice.name}>
-                {voice.name} {voice.lang.includes("en") ? "" : `(${voice.lang})`}
+                {voice.name}{" "}
+                {voice.lang.includes("en") ? "" : `(${voice.lang})`}
               </option>
             ))}
           </select>
@@ -236,17 +247,26 @@ export default function ShareNotePage() {
             variant="outline"
             size="sm"
             onClick={handleSpeak}
-            className="flex items-center justify-center gap-2 rounded-lg"
+            className="flex items-center justify-center gap-2 rounded-xl w-full sm:w-auto"
           >
-            {isSpeaking ? (isPaused ? <Play size={16} /> : <Pause size={16} />) : <Volume2 size={16} />}
+            {isSpeaking ? (
+              isPaused ? (
+                <Play size={16} />
+              ) : (
+                <Pause size={16} />
+              )
+            ) : (
+              <Volume2 size={16} />
+            )}
             {isSpeaking ? (isPaused ? "Resume" : "Pause") : "Listen"}
           </Button>
+
           {isSpeaking && (
             <Button
               variant="destructive"
               size="sm"
               onClick={handleStop}
-              className="flex items-center justify-center gap-2 rounded-lg"
+              className="flex items-center justify-center gap-2 rounded-xl w-full sm:w-auto"
             >
               <Square size={16} />
               Stop
@@ -262,8 +282,10 @@ export default function ShareNotePage() {
         </h1>
         <p className="text-sm text-muted-foreground mb-6">
           {readingTime}
-          {wordCount !== null && wordCount >= 50 && ` (${formatNumber(wordCount)} words)`} • Last updated{" "}
-          {new Date(note.updated_at).toLocaleString()}
+          {wordCount !== null &&
+            wordCount >= 50 &&
+            ` (${formatNumber(wordCount)} words)`}{" "}
+          • Last updated {new Date(note.updated_at).toLocaleString()}
         </p>
         <div
           className="prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-all"
