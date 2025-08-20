@@ -45,6 +45,8 @@ export default function ShareNotePage() {
   // TTS state
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string>("");
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -75,7 +77,19 @@ export default function ShareNotePage() {
 
     fetchNote();
 
-    // cleanup: stop speech when leaving page
+    // load voices
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
+      if (!selectedVoice && availableVoices.length > 0) {
+        setSelectedVoice(availableVoices[0].name);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    // cleanup speech
     return () => {
       window.speechSynthesis.cancel();
     };
@@ -91,11 +105,9 @@ export default function ShareNotePage() {
     }
   };
 
-  // Extract plain text from HTML
   const getPlainText = (html: string) =>
     DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
 
-  // TTS controls
   const handleSpeak = () => {
     if (!note) return;
     const text = getPlainText(note.body);
@@ -104,6 +116,11 @@ export default function ShareNotePage() {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "en-US";
       utterance.rate = 1;
+
+      // apply selected voice
+      const voice = voices.find((v) => v.name === selectedVoice);
+      if (voice) utterance.voice = voice;
+
       utterance.onend = () => setIsSpeaking(false);
 
       window.speechSynthesis.speak(utterance);
@@ -124,7 +141,6 @@ export default function ShareNotePage() {
     setIsPaused(false);
   };
 
-  // Format numbers with commas
   const formatNumber = (num: number) =>
     new Intl.NumberFormat("en-US").format(num);
 
@@ -192,7 +208,7 @@ export default function ShareNotePage() {
           <img src={appLogo} alt="App Logo" className="h-7 w-7" />
           <span className="font-semibold text-base sm:text-lg">InkLine</span>
         </Link>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
           <Button
             variant="outline"
             size="sm"
@@ -202,6 +218,20 @@ export default function ShareNotePage() {
             {copied ? <Check size={16} /> : <Copy size={16} />}
             {copied ? "Copied!" : "Copy Link"}
           </Button>
+
+          {/* Voice selector */}
+          <select
+            className="border rounded-lg px-2 py-1 text-sm bg-background"
+            value={selectedVoice}
+            onChange={(e) => setSelectedVoice(e.target.value)}
+          >
+            {voices.map((voice) => (
+              <option key={voice.name} value={voice.name}>
+                {voice.name} {voice.lang.includes("en") ? "" : `(${voice.lang})`}
+              </option>
+            ))}
+          </select>
+
           <Button
             variant="outline"
             size="sm"
