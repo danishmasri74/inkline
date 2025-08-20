@@ -8,12 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DOMPurify from "dompurify";
 
+function calculateReadingTime(html: string): string {
+  // Strip HTML tags and get plain text
+  const text = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+  const words = text.trim().split(/\s+/).length;
+
+  const wordsPerMinute = 225; // average reading speed
+  const minutes = Math.max(1, Math.ceil(words / wordsPerMinute));
+
+  return `${minutes} min read`;
+}
+
 export default function ShareNotePage() {
   const { shareId } = useParams<{ shareId: string }>();
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [readingTime, setReadingTime] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -33,8 +45,9 @@ export default function ShareNotePage() {
       if (error) {
         console.error("Error fetching shared note:", error.message);
         setError("This note is private or does not exist.");
-      } else {
+      } else if (data) {
         setNote(data);
+        setReadingTime(calculateReadingTime(data.body));
       }
       setLoading(false);
     };
@@ -133,16 +146,17 @@ export default function ShareNotePage() {
 
       {/* Note content */}
       <main className="max-w-3xl mx-auto p-4 sm:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4">
           {note.title}
         </h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          {readingTime} • Last updated{" "}
+          {new Date(note.updated_at).toLocaleString()}
+        </p>
         <div
           className="prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-all"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.body) }}
         />
-        <p className="mt-6 sm:mt-8 text-xs sm:text-sm text-muted-foreground">
-          Last updated {new Date(note.updated_at).toLocaleString()}
-        </p>
       </main>
     </div>
   );
