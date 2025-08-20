@@ -3,16 +3,22 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Note } from "@/types/Notes";
 import appLogo from "@/assets/InkLine.png";
-import { Loader2, AlertCircle, FileQuestion, Copy, Check } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  FileQuestion,
+  Copy,
+  Check,
+  Play,
+  Pause,
+  Square,
+  Volume2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DOMPurify from "dompurify";
 
-function calculateReadingTime(html: string): {
-  readingTime: string;
-  words: number;
-} {
-  // Strip HTML tags and get plain text
+function calculateReadingTime(html: string): { readingTime: string; words: number } {
   const text = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
   const words = text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -20,7 +26,7 @@ function calculateReadingTime(html: string): {
     return { readingTime: "Quick read", words };
   }
 
-  const wordsPerMinute = 225; // average reading speed
+  const wordsPerMinute = 225;
   const minutes = Math.max(1, Math.ceil(words / wordsPerMinute));
   const readingTime = minutes === 1 ? "1 min read" : `${minutes} mins read`;
 
@@ -35,6 +41,10 @@ export default function ShareNotePage() {
   const [copied, setCopied] = useState(false);
   const [readingTime, setReadingTime] = useState<string | null>(null);
   const [wordCount, setWordCount] = useState<number | null>(null);
+
+  // TTS state
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -64,6 +74,11 @@ export default function ShareNotePage() {
     };
 
     fetchNote();
+
+    // cleanup: stop speech when leaving page
+    return () => {
+      window.speechSynthesis.cancel();
+    };
   }, [shareId]);
 
   const handleCopyLink = async () => {
@@ -75,6 +90,43 @@ export default function ShareNotePage() {
       console.error("Failed to copy:", err);
     }
   };
+
+  // Extract plain text from HTML
+  const getPlainText = (html: string) =>
+    DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+
+  // TTS controls
+  const handleSpeak = () => {
+    if (!note) return;
+    const text = getPlainText(note.body);
+
+    if (!isSpeaking) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.rate = 1;
+      utterance.onend = () => setIsSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+      setIsSpeaking(true);
+      setIsPaused(false);
+    } else if (isPaused) {
+      window.speechSynthesis.resume();
+      setIsPaused(false);
+    } else {
+      window.speechSynthesis.pause();
+      setIsPaused(true);
+    }
+  };
+
+  const handleStop = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+    setIsPaused(false);
+  };
+
+  // Format numbers with commas
+  const formatNumber = (num: number) =>
+    new Intl.NumberFormat("en-US").format(num);
 
   // Fallback UI
   const Fallback = ({
@@ -117,9 +169,7 @@ export default function ShareNotePage() {
   if (error)
     return (
       <Fallback
-        icon={
-          <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-destructive" />
-        }
+        icon={<AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-destructive" />}
         title="Unable to load note"
         description={error}
       />
@@ -128,17 +178,11 @@ export default function ShareNotePage() {
   if (!note)
     return (
       <Fallback
-        icon={
-          <FileQuestion className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
-        }
+        icon={<FileQuestion className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />}
         title="Note not found"
         description="This note is private or does not exist."
       />
     );
-
-  // Format numbers with commas (e.g., 2,350)
-  const formatNumber = (num: number) =>
-    new Intl.NumberFormat("en-US").format(num);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -148,15 +192,37 @@ export default function ShareNotePage() {
           <img src={appLogo} alt="App Logo" className="h-7 w-7" />
           <span className="font-semibold text-base sm:text-lg">InkLine</span>
         </Link>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCopyLink}
-          className="flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto"
-        >
-          {copied ? <Check size={16} /> : <Copy size={16} />}
-          {copied ? "Copied!" : "Copy Link"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyLink}
+            className="flex items-center justify-center gap-2 rounded-lg"
+          >
+            {copied ? <Check size={16} /> : <Copy size={16} />}
+            {copied ? "Copied!" : "Copy Link"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSpeak}
+            className="flex items-center justify-center gap-2 rounded-lg"
+          >
+            {isSpeaking ? (isPaused ? <Play size={16} /> : <Pause size={16} />) : <Volume2 size={16} />}
+            {isSpeaking ? (isPaused ? "Resume" : "Pause") : "Listen"}
+          </Button>
+          {isSpeaking && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleStop}
+              className="flex items-center justify-center gap-2 rounded-lg"
+            >
+              <Square size={16} />
+              Stop
+            </Button>
+          )}
+        </div>
       </header>
 
       {/* Note content */}
@@ -166,10 +232,8 @@ export default function ShareNotePage() {
         </h1>
         <p className="text-sm text-muted-foreground mb-6">
           {readingTime}
-          {wordCount !== null &&
-            wordCount >= 50 &&
-            ` (${formatNumber(wordCount)} words)`}{" "}
-          • Last updated {new Date(note.updated_at).toLocaleString()}
+          {wordCount !== null && wordCount >= 50 && ` (${formatNumber(wordCount)} words)`} • Last updated{" "}
+          {new Date(note.updated_at).toLocaleString()}
         </p>
         <div
           className="prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-all"
