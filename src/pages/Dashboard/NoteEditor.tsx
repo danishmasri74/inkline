@@ -173,7 +173,7 @@ const NoteEditor = forwardRef(function NoteEditor(
           updated_at: data.updated_at,
         });
       }
-      
+
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 1200);
     }, 800);
@@ -360,7 +360,7 @@ const NoteEditor = forwardRef(function NoteEditor(
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
         style={{ fontSize: FONT_SIZE_STYLES[fontSize] }}
-        className="text-3xl shadow-none mb-6 font-bold font-typewriter bg-transparent border-none p-0"
+        className="text-3xl shadow-none mb-6 font-bold font-typewriter bg-transparent border-none p-0 break-words"
       />
 
       {/* Rich Text Body */}
