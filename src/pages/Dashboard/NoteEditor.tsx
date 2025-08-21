@@ -58,6 +58,16 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   const editorRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const el = document.getElementById(
+      "note-title"
+    ) as HTMLTextAreaElement | null;
+    if (el) {
+      el.style.height = "auto"; // reset height
+      el.style.height = el.scrollHeight + "px"; // expand to fit content
+    }
+  }, [title]);
+
   // Refs to track last-saved values to prevent unnecessary saves
   const lastSavedTitleRef = useRef<string>("");
   const lastSavedBodyRef = useRef<string>("");
@@ -355,12 +365,14 @@ const NoteEditor = forwardRef(function NoteEditor(
       </div>
 
       {/* Title */}
-      <Input
+      <textarea
+        id="note-title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
+        rows={1}
         style={{ fontSize: FONT_SIZE_STYLES[fontSize] }}
-        className="text-3xl shadow-none mb-6 font-bold font-typewriter bg-transparent border-none p-0 break-words"
+        className="w-full resize-none overflow-hidden text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none break-words"
       />
 
       {/* Rich Text Body */}
