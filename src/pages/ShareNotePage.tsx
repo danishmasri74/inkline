@@ -61,6 +61,7 @@ export default function ShareNotePage() {
         return;
       }
 
+      // fetch the note
       const { data, error } = await supabase
         .from("notes")
         .select("*")
@@ -73,9 +74,28 @@ export default function ShareNotePage() {
         setError("This note is private or does not exist.");
       } else if (data) {
         setNote(data);
+
+        // calculate reading time + words
         const { readingTime, words } = calculateReadingTime(data.body);
         setReadingTime(readingTime);
         setWordCount(words);
+
+        // increment view count
+        const { error: updateError } = await supabase.rpc(
+          "increment_note_view_count",
+          { note_id: data.id }
+        );
+        if (updateError) {
+          console.error("Failed to increment view count:", updateError.message);
+        } else {
+          // re-fetch note with updated count
+          const { data: updatedNote } = await supabase
+            .from("notes")
+            .select("*")
+            .eq("id", data.id)
+            .single();
+          if (updatedNote) setNote(updatedNote);
+        }
       }
       setLoading(false);
     };
@@ -286,6 +306,9 @@ export default function ShareNotePage() {
             wordCount >= 50 &&
             ` (${formatNumber(wordCount)} words)`}{" "}
           • Last updated {new Date(note.updated_at).toLocaleString()}
+          {note.view_count !== undefined && (
+            <> • {formatNumber(note.view_count)} views</>
+          )}
         </p>
         <div
           className="prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-all"
