@@ -35,6 +35,7 @@ export default function NotesPage({ session }: { session: Session }) {
         .from("notes")
         .select("*")
         .eq("user_id", userId)
+        .eq("archived", false) // ✅ only fetch active notes
         .order("updated_at", { ascending: false });
 
       if (error) {
@@ -89,45 +90,27 @@ export default function NotesPage({ session }: { session: Session }) {
     handleSelectNote(data.id);
   };
 
-  const handleDeleteNote = async () => {
-    const idsToDelete = selectedNoteId
+  // ✅ Archive single note
+  const handleArchiveNote = async () => {
+    const idsToArchive = selectedNoteId
       ? [selectedNoteId]
       : selectedTableNoteIds;
-    if (idsToDelete.length === 0) return;
+    if (idsToArchive.length === 0) return;
 
     const { error } = await supabase
       .from("notes")
-      .delete()
-      .in("id", idsToDelete)
+      .update({ archived: true })
+      .in("id", idsToArchive)
       .eq("user_id", userId);
 
-    if (error) return console.error("Error deleting note(s):", error.message);
+    if (error) return console.error("Error archiving note(s):", error.message);
 
-    setNotes((prev) => prev.filter((note) => !idsToDelete.includes(note.id)));
+    setNotes((prev) => prev.filter((note) => !idsToArchive.includes(note.id)));
 
-    if (idsToDelete.includes(selectedNoteId!)) {
+    if (idsToArchive.includes(selectedNoteId!)) {
       handleSelectNote(null);
     }
 
-    setSelectedTableNoteIds([]);
-    refetchTableNotes();
-  };
-
-  const handleDeleteSelectedNotes = async () => {
-    if (selectedTableNoteIds.length === 0) return;
-
-    const { error } = await supabase
-      .from("notes")
-      .delete()
-      .in("id", selectedTableNoteIds)
-      .eq("user_id", userId);
-
-    if (error)
-      return console.error("Error deleting selected notes:", error.message);
-
-    setNotes((prev) =>
-      prev.filter((note) => !selectedTableNoteIds.includes(note.id))
-    );
     setSelectedTableNoteIds([]);
     refetchTableNotes();
   };
@@ -211,7 +194,7 @@ export default function NotesPage({ session }: { session: Session }) {
 
         <Header
           onNewNote={handleNewNote}
-          onDelete={selectedNote ? handleDeleteNote : handleDeleteSelectedNotes}
+          onDelete={handleArchiveNote} // ✅ now archives instead of deletes
           isDeleteDisabled={
             selectedNote ? !selectedNoteId : selectedTableNoteIds.length === 0
           }
@@ -251,13 +234,11 @@ export default function NotesPage({ session }: { session: Session }) {
         )}
 
         {selectedNote ? (
-          <>
-            <div className="flex justify-center">
-              <div className="w-full max-w-[85ch]">
-                <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
-              </div>
+          <div className="flex justify-center">
+            <div className="w-full max-w-[85ch]">
+              <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
             </div>
-          </>
+          </div>
         ) : (
           <div className="w-full">
             <NotesIndex
