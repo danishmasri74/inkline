@@ -194,8 +194,8 @@ export default function NotesPage({ session }: { session: Session }) {
 
         <Header
           onNewNote={handleNewNote}
-          onDelete={handleArchiveNote} // ✅ now archives instead of deletes
-          isDeleteDisabled={
+          onArchive={handleArchiveNote} // ✅ now archives instead of deletes
+          isArchiveDisabled={
             selectedNote ? !selectedNoteId : selectedTableNoteIds.length === 0
           }
           isNewDisabled={notes.length >= noteLimit}

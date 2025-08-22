@@ -8,8 +8,8 @@ import {
 
 type HeaderProps = {
   onNewNote: () => void;
-  onDelete: () => void;
-  isDeleteDisabled: boolean;
+  onArchive: () => void;
+  isArchiveDisabled: boolean;
   isNewDisabled: boolean;
   noteLimitReachedMessage?: string;
   showTableMode?: boolean;
@@ -26,8 +26,8 @@ type HeaderProps = {
 
 export default function Header({
   onNewNote,
-  onDelete,
-  isDeleteDisabled,
+  onArchive,
+  isArchiveDisabled,
   isNewDisabled,
   noteLimitReachedMessage,
   showTableMode,
@@ -49,7 +49,6 @@ export default function Header({
       {/* Actions */}
       <TooltipProvider>
         <div className="flex flex-wrap justify-center sm:justify-end gap-2 w-full sm:w-auto">
-
           {/* View All Notes */}
           {onDeselect && !isIndexPage && (
             <Button
@@ -81,31 +80,29 @@ export default function Header({
             )}
           </Tooltip>
 
-          {/* Share + Copy */}
+          {/* Share */}
           {onToggleShare && (
-            <>
-              <Button
-                variant={isShared ? "secondary" : "outline"}
-                onClick={onToggleShare}
-                aria-label={isShared ? "Unshare this note" : "Share this note"}
-                className="w-full sm:w-auto"
-              >
-                {isShared ? "Unshare" : "Share"}
-              </Button>
-            </>
+            <Button
+              variant={isShared ? "secondary" : "outline"}
+              onClick={onToggleShare}
+              aria-label={isShared ? "Unshare this note" : "Share this note"}
+              className="w-full sm:w-auto"
+            >
+              {isShared ? "Unshare" : "Share"}
+            </Button>
           )}
 
-          {/* Delete */}
+          {/* Archive */}
           <Button
-            variant="destructive"
-            onClick={onDelete}
-            disabled={isDeleteDisabled}
+            variant="secondary"
+            onClick={onArchive}
+            disabled={isArchiveDisabled}
             aria-label={
-              showTableMode ? "Delete selected notes" : "Delete current note"
+              showTableMode ? "Archive selected notes" : "Archive current note"
             }
             className="w-full sm:w-auto"
           >
-            Delete
+            Archive
           </Button>
         </div>
       </TooltipProvider>
