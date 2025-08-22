@@ -273,7 +273,7 @@ export default function NotesIndex({
                           </TooltipTrigger>
                           <TooltipContent>
                             <div
-                              className="max-w-xs whitespace-pre-wrap text-foreground"
+                              className="max-w-xs whitespace-pre-wrap break-words text-foreground"
                               dangerouslySetInnerHTML={{
                                 __html: note.body || "—",
                               }}
