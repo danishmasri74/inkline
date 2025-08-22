@@ -74,9 +74,13 @@ export default function NotesIndex({
   };
 
   const filteredSortedNotes = notes
+    // ✅ Hide archived notes
+    .filter((note) => !note.archived)
+    // ✅ Apply search
     .filter((note) =>
       note.title?.toLowerCase().includes(searchQuery.toLowerCase())
     )
+    // ✅ Sort
     .sort((a, b) => {
       const { key, direction } = sortConfig;
       const aValue = a[key] ?? "";
@@ -258,9 +262,12 @@ export default function NotesIndex({
                             <span>{previewText}</span>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p className="max-w-xs whitespace-pre-wrap">
-                              {note.body || "—"}
-                            </p>
+                            <div
+                              className="max-w-xs whitespace-pre-wrap text-foreground"
+                              dangerouslySetInnerHTML={{
+                                __html: note.body || "—",
+                              }}
+                            />
                           </TooltipContent>
                         </Tooltip>
                       </td>
