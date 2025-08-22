@@ -9,6 +9,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { ArchiveIcon } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 type SidebarProps = {
   notes: Note[];
@@ -152,14 +153,35 @@ export default function Sidebar({
                         {item.note!.title || "Untitled"}
                       </span>
 
-                      {/* Archive button placeholder */}
+                      {/* Archive button */}
                       <Button
                         size="icon"
                         variant="ghost"
                         className="opacity-0 group-hover:opacity-100 transition ml-2 h-6 w-6"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          console.log("Archive clicked for:", item.note!.id); // ✅ placeholder
+
+                          try {
+                            const { error } = await supabase
+                              .from("notes")
+                              .update({ archived: true })
+                              .eq("id", item.note!.id);
+
+                            if (error) {
+                              console.error(
+                                "Failed to archive note:",
+                                error.message
+                              );
+                            } else {
+                              // Remove the archived note from UI without full reload
+                              onDeselect?.();
+                            }
+                          } catch (err) {
+                            console.error(
+                              "Unexpected error archiving note:",
+                              err
+                            );
+                          }
                         }}
                       >
                         <ArchiveIcon className="h-4 w-4" />
