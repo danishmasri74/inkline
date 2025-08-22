@@ -8,6 +8,7 @@ import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
+import { ArchiveIcon } from "lucide-react";
 
 type SidebarProps = {
   notes: Note[];
@@ -40,6 +41,7 @@ export default function Sidebar({
     const yesterday: Note[] = [];
     const older: Note[] = [];
     for (const note of notes) {
+      if (note.archived) continue; // ✅ skip archived notes
       const updatedAt = new Date(note.updated_at);
       if (isToday(updatedAt)) today.push(note);
       else if (isYesterday(updatedAt)) yesterday.push(note);
@@ -139,14 +141,29 @@ export default function Sidebar({
                   ) : (
                     <motion.button
                       whileTap={{ scale: 0.98 }}
-                      className={`w-full text-left px-3 py-2 truncate ${
+                      className={`group w-full flex items-center justify-between px-3 py-2 truncate ${
                         item.note!.id === selectedId
                           ? "border-l-4 border-primary bg-accent"
                           : "hover:bg-accent/50"
                       }`}
                       onClick={() => onSelect(item.note!.id)}
                     >
-                      {item.note!.title || "Untitled"}
+                      <span className="truncate">
+                        {item.note!.title || "Untitled"}
+                      </span>
+
+                      {/* Archive button placeholder */}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="opacity-0 group-hover:opacity-100 transition ml-2 h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log("Archive clicked for:", item.note!.id); // ✅ placeholder
+                        }}
+                      >
+                        <ArchiveIcon className="h-4 w-4" />
+                      </Button>
                     </motion.button>
                   )}
                 </div>
