@@ -27,6 +27,7 @@ type SidebarProps = {
   onClose?: () => void;
   onDeselect?: () => void;
   onCreateNote?: () => void;
+  setNotes: React.Dispatch<React.SetStateAction<Note[]>>; // ✅ add setter
 };
 
 const getInitial = (email: string) => email?.charAt(0)?.toUpperCase() ?? "?";
@@ -40,6 +41,7 @@ export default function Sidebar({
   onClose,
   onDeselect,
   onCreateNote,
+  setNotes,
 }: SidebarProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -66,7 +68,7 @@ export default function Sidebar({
     const yesterday: Note[] = [];
     const older: Note[] = [];
     for (const note of notes) {
-      if (note.archived) continue; // ✅ skip archived notes
+      if (note.archived) continue; // ✅ skip archived
       const updatedAt = new Date(note.updated_at);
       if (isToday(updatedAt)) today.push(note);
       else if (isYesterday(updatedAt)) yesterday.push(note);
@@ -189,6 +191,18 @@ export default function Sidebar({
                               .from("notes")
                               .update({ archived: true })
                               .eq("id", item.note!.id);
+
+                            // ✅ Remove from notes instantly
+                            setNotes((prev) =>
+                              prev.filter((n) => n.id !== item.note!.id)
+                            );
+
+                            // ✅ Add into archived instantly
+                            setArchivedNotes((prev) => [
+                              { ...item.note!, archived: true },
+                              ...prev,
+                            ]);
+
                             onDeselect?.();
                           } catch (err) {
                             console.error("Failed to archive note:", err);
@@ -258,9 +272,17 @@ export default function Sidebar({
                           .from("notes")
                           .update({ archived: false })
                           .eq("id", note.id);
+
+                        // ✅ Remove from archive list
                         setArchivedNotes((prev) =>
                           prev.filter((n) => n.id !== note.id)
                         );
+
+                        // ✅ Add back to notes instantly
+                        setNotes((prev) => [
+                          { ...note, archived: false },
+                          ...prev,
+                        ]);
                       }}
                     >
                       <RotateCcwIcon className="h-4 w-4" />

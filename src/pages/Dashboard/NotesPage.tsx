@@ -180,6 +180,7 @@ export default function NotesPage({ session }: { session: Session }) {
               onLogout={handleLogout}
               userEmail={session.user.email!}
               onClose={() => setMobileSidebarOpen(false)}
+              setNotes={setNotes}
             />
           </div>
         </div>
@@ -193,6 +194,7 @@ export default function NotesPage({ session }: { session: Session }) {
           onLogout={handleLogout}
           userEmail={session.user.email!}
           onDeselect={() => handleSelectNote(null)}
+          setNotes={setNotes}
         />
       </div>
 
