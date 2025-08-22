@@ -26,6 +26,13 @@ type NotesIndexProps = {
 
 const STORAGE_KEY = "notes_sort_config";
 
+// ✅ Utility: Strip HTML tags
+const stripHtml = (html: string): string => {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || "";
+};
+
 export default function NotesIndex({
   notes,
   selectedIds,
@@ -225,10 +232,13 @@ export default function NotesIndex({
               ) : (
                 filteredSortedNotes.map((note, index) => {
                   const isSelected = selectedIds.includes(note.id);
+
+                  // ✅ Clean preview (strip HTML)
+                  const previewTextRaw = stripHtml(note.body || "");
                   const previewText =
-                    note.body?.length > 100
-                      ? `${note.body.slice(0, 100).trim()}…`
-                      : note.body || "—";
+                    previewTextRaw.length > 100
+                      ? `${previewTextRaw.slice(0, 100).trim()}…`
+                      : previewTextRaw || "—";
 
                   return (
                     <tr
