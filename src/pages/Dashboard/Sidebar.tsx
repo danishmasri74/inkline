@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -8,8 +8,15 @@ import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
-import { ArchiveIcon } from "lucide-react";
+import { ArchiveIcon, TrashIcon, RotateCcwIcon } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type SidebarProps = {
   notes: Note[];
@@ -35,6 +42,23 @@ export default function Sidebar({
   onCreateNote,
 }: SidebarProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+
+  const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
+  const [openArchive, setOpenArchive] = useState(false);
+
+  // Load archived notes when dialog is opened
+  useEffect(() => {
+    if (openArchive) {
+      supabase
+        .from("notes")
+        .select("*")
+        .eq("archived", true)
+        .order("updated_at", { ascending: false })
+        .then(({ data, error }) => {
+          if (!error && data) setArchivedNotes(data as Note[]);
+        });
+    }
+  }, [openArchive]);
 
   // Categorize notes
   const { todayNotes, yesterdayNotes, olderNotes } = useMemo(() => {
@@ -160,27 +184,14 @@ export default function Sidebar({
                         className="opacity-0 group-hover:opacity-100 transition ml-2 h-6 w-6"
                         onClick={async (e) => {
                           e.stopPropagation();
-
                           try {
-                            const { error } = await supabase
+                            await supabase
                               .from("notes")
                               .update({ archived: true })
                               .eq("id", item.note!.id);
-
-                            if (error) {
-                              console.error(
-                                "Failed to archive note:",
-                                error.message
-                              );
-                            } else {
-                              // Remove the archived note from UI without full reload
-                              onDeselect?.();
-                            }
+                            onDeselect?.();
                           } catch (err) {
-                            console.error(
-                              "Unexpected error archiving note:",
-                              err
-                            );
+                            console.error("Failed to archive note:", err);
                           }
                         }}
                       >
@@ -213,6 +224,67 @@ export default function Sidebar({
             }`}
           />
         </div>
+
+        {/* Archived Notes Dialog */}
+        <Dialog open={openArchive} onOpenChange={setOpenArchive}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full">
+              <ArchiveIcon className="h-4 w-4 mr-2" /> Archived
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Archived Notes</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {archivedNotes.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No archived notes.
+                </p>
+              )}
+              {archivedNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="flex items-center justify-between p-2 rounded-md hover:bg-accent/50"
+                >
+                  <span className="truncate">{note.title || "Untitled"}</span>
+                  <div className="flex items-center gap-2">
+                    {/* Restore */}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={async () => {
+                        await supabase
+                          .from("notes")
+                          .update({ archived: false })
+                          .eq("id", note.id);
+                        setArchivedNotes((prev) =>
+                          prev.filter((n) => n.id !== note.id)
+                        );
+                      }}
+                    >
+                      <RotateCcwIcon className="h-4 w-4" />
+                    </Button>
+                    {/* Permanent delete */}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={async () => {
+                        await supabase.from("notes").delete().eq("id", note.id);
+                        setArchivedNotes((prev) =>
+                          prev.filter((n) => n.id !== note.id)
+                        );
+                      }}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* User info */}
         <div className="flex items-center gap-3 text-sm">
