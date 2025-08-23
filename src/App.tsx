@@ -7,10 +7,29 @@ import type { Session } from "@supabase/supabase-js";
 import Login from "./pages/Auth/Login";
 import SignUp from "./pages/Auth/SignUp";
 import ResetPassword from "./pages/Auth/ResetPassword";
-import NotesPage from "./pages/Dashboard/NotesPage";
+import NotesPage from "./pages/Dashboard/NotesPage"; // layout wrapper
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 import ShareNotePage from "./pages/ShareNotePage";
+import ProfilePage from "./pages/Dashboard/ProfilePage";
+
+// Example child pages
+import NotesDashboard from "./pages/Dashboard/NotesDashboard";
+import NoteEditor from "./pages/Dashboard/NoteEditor";
+
+// Protected Route Wrapper
+function ProtectedRoute({
+  session,
+  children,
+}: {
+  session: Session | null;
+  children: React.ReactNode;
+}) {
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -52,17 +71,20 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/share/:shareId" element={<ShareNotePage />} />
 
-      {/* Protected Routes */}
+      {/* Protected Dashboard Layout with nested routes */}
       <Route
         path="/dashboard/*"
         element={
-          session ? (
-            <NotesPage session={session} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          <ProtectedRoute session={session}>
+            <NotesPage session={session!} />
+          </ProtectedRoute>
         }
-      />
+      >
+        {/* 👇 Child routes inside the NotesPage layout */}
+        <Route index element={<NotesDashboard />} />
+        <Route path="note/:id" element={<NoteEditor />} />
+        <Route path="profile" element={<ProfilePage session={session!} />} />
+      </Route>
 
       {/* Root & Catch-All */}
       <Route

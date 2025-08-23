@@ -6,12 +6,12 @@ import NotesTable from "./NotesTable";
 import { Dispatch, SetStateAction } from "react";
 
 type NotesDashboardProps = {
-  notes: Note[];
-  archivedNotes: Note[];
-  onCreateNote: () => void;
-  onSelectNote: (id: string) => void;
-  selectedIds: string[];
-  setSelectedIds: Dispatch<SetStateAction<string[]>>;
+  notes?: Note[];
+  archivedNotes?: Note[];
+  onCreateNote?: () => void;
+  onSelectNote?: (id: string) => void;
+  selectedIds?: string[];
+  setSelectedIds?: Dispatch<SetStateAction<string[]>>;
 };
 
 // --- helpers ---
@@ -38,12 +38,12 @@ function avgWordCount(list: Note[]): number {
 }
 
 export default function NotesDashboard({
-  notes,
-  archivedNotes,
-  onCreateNote,
-  onSelectNote,
-  selectedIds,
-  setSelectedIds,
+  notes = [],
+  archivedNotes = [],
+  onCreateNote = () => {},
+  onSelectNote = () => {},
+  selectedIds = [],
+  setSelectedIds = () => {},
 }: NotesDashboardProps) {
   const totalNotes = notes.length + archivedNotes.length;
   const remaining = 100 - totalNotes;

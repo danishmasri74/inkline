@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
 import { Note } from "@/types/Notes";
@@ -9,11 +9,12 @@ import Header from "./Header";
 import NoteEditor from "./NoteEditor";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import NotesIndex from "./NotesIndex";
 import NotesDashboard from "./NotesDashboard";
+import ProfilePage from "./ProfilePage";
 
 export default function NotesPage({ session }: { session: Session }) {
   const { id } = useParams<{ id?: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [notes, setNotes] = useState<Note[]>([]);
@@ -27,9 +28,10 @@ export default function NotesPage({ session }: { session: Session }) {
     () => () => {}
   );
   const [copied, setCopied] = useState(false);
+  const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
+
   const userId = session.user.id;
   const noteLimit = 100;
-  const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -100,7 +102,6 @@ export default function NotesPage({ session }: { session: Session }) {
     handleSelectNote(data.id);
   };
 
-  // ✅ Archive single note
   const handleArchiveNote = async () => {
     const idsToArchive = selectedNoteId
       ? [selectedNoteId]
@@ -154,6 +155,8 @@ export default function NotesPage({ session }: { session: Session }) {
     setCopied(false);
   };
 
+  const isProfilePage = location.pathname.includes("/dashboard/profile");
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
       {mobileSidebarOpen && (
@@ -162,7 +165,7 @@ export default function NotesPage({ session }: { session: Session }) {
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          <div className="relative w-72 max-w-[80vw] h-full bg-background shadow-lg transition-transform duration-300 ease-in-out transform translate-x-0">
+          <div className="relative w-72 max-w-[80vw] h-full bg-background shadow-lg">
             <Sidebar
               notes={notes}
               selectedId={selectedNoteId}
@@ -180,6 +183,7 @@ export default function NotesPage({ session }: { session: Session }) {
         </div>
       )}
 
+      {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar
           notes={notes}
@@ -193,6 +197,7 @@ export default function NotesPage({ session }: { session: Session }) {
         />
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 p-4 md:p-6 relative md:ml-30">
         <div className="md:hidden mb-4 flex justify-between items-center">
           <Button
@@ -204,62 +209,70 @@ export default function NotesPage({ session }: { session: Session }) {
           </Button>
         </div>
 
-        <Header
-          onNewNote={handleNewNote}
-          onArchive={handleArchiveNote} // ✅ now archives instead of deletes
-          isArchiveDisabled={
-            selectedNote ? !selectedNoteId : selectedTableNoteIds.length === 0
-          }
-          isNewDisabled={notes.length >= noteLimit}
-          noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
-          onDeselect={() => handleSelectNote(null)}
-          isIndexPage={!selectedNoteId}
-          onToggleShare={selectedNote ? handleToggleShare : undefined}
-          isShared={selectedNote?.is_public}
-          shareUrl={shareUrl}
-          isCopyDisabled={!shareUrl}
-          onCopyShareUrl={async () => {
-            if (shareUrl) {
-              await navigator.clipboard.writeText(shareUrl);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
-            }
-          }}
-        />
-
-        {/* Share Link Panel */}
-        {shareUrl && (
-          <div className="flex items-center justify-between gap-2 mb-4 p-3 border rounded-lg bg-muted">
-            <span className="truncate text-sm">{shareUrl}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await navigator.clipboard.writeText(shareUrl);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              }}
-            >
-              {copied ? "Copied!" : "Copy"}
-            </Button>
-          </div>
-        )}
-
-        {selectedNote ? (
-          <div className="flex justify-center">
-            <div className="w-full max-w-[85ch]">
-              <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
-            </div>
-          </div>
+        {/* ✅ Route-driven switching instead of activeTab */}
+        {isProfilePage ? (
+          <ProfilePage session={session} />
         ) : (
-          <NotesDashboard
-            notes={notes}
-            archivedNotes={archivedNotes}
-            onCreateNote={handleNewNote}
-            onSelectNote={handleSelectNote}
-            selectedIds={selectedTableNoteIds}
-            setSelectedIds={setSelectedTableNoteIds}
-          />
+          <>
+            <Header
+              onNewNote={handleNewNote}
+              onArchive={handleArchiveNote}
+              isArchiveDisabled={
+                selectedNote
+                  ? !selectedNoteId
+                  : selectedTableNoteIds.length === 0
+              }
+              isNewDisabled={notes.length >= noteLimit}
+              noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
+              onDeselect={() => handleSelectNote(null)}
+              isIndexPage={!selectedNoteId}
+              onToggleShare={selectedNote ? handleToggleShare : undefined}
+              isShared={selectedNote?.is_public}
+              shareUrl={shareUrl}
+              isCopyDisabled={!shareUrl}
+              onCopyShareUrl={async () => {
+                if (shareUrl) {
+                  await navigator.clipboard.writeText(shareUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }
+              }}
+            />
+
+            {shareUrl && (
+              <div className="flex items-center justify-between gap-2 mb-4 p-3 border rounded-lg bg-muted">
+                <span className="truncate text-sm">{shareUrl}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(shareUrl);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                >
+                  {copied ? "Copied!" : "Copy"}
+                </Button>
+              </div>
+            )}
+
+            {selectedNote ? (
+              <div className="flex justify-center">
+                <div className="w-full max-w-[85ch]">
+                  <NoteEditor note={selectedNote} onUpdate={handleNoteUpdate} />
+                </div>
+              </div>
+            ) : (
+              <NotesDashboard
+                notes={notes}
+                archivedNotes={archivedNotes}
+                onCreateNote={handleNewNote}
+                onSelectNote={handleSelectNote}
+                selectedIds={selectedTableNoteIds}
+                setSelectedIds={setSelectedTableNoteIds}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

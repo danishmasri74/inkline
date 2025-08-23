@@ -6,8 +6,8 @@ import DOMPurify from "dompurify";
 import NoteToolbar from "./NoteToolbar";
 
 type NoteEditorProps = {
-  note: Note | null;
-  onUpdate: (updatedNote: Note) => void;
+  note?: Note | null;
+  onUpdate?: (updatedNote: Note) => void;
 };
 
 const FONT_SIZES = ["smallest", "small", "regular", "big", "biggest"] as const;
@@ -25,7 +25,7 @@ const LOCAL_STORAGE_KEY = "note-editor-font-size";
 const MAX_CHARS = 4096;
 
 const NoteEditor = forwardRef(function NoteEditor(
-  { note, onUpdate }: NoteEditorProps,
+  { note = null, onUpdate = () => {} }: NoteEditorProps,
   _ref
 ) {
   const [title, setTitle] = useState("");

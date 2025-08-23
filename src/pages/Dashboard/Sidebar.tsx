@@ -8,14 +8,10 @@ import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
-import {
-  ArchiveIcon,
-  HomeIcon,
-  LayoutDashboardIcon,
-  PlusCircle,
-} from "lucide-react";
+import { ArchiveIcon, HomeIcon, PlusCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import ArchiveDialog from "./ArchiveDialog";
+import { useNavigate } from "react-router-dom";
 
 type SidebarProps = {
   notes: Note[]; // 🟢 now ONLY active notes
@@ -46,6 +42,7 @@ export default function Sidebar({
 
   const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
   const [openArchive, setOpenArchive] = useState(false);
+  const navigate = useNavigate();
 
   // fetch archived notes once
   useEffect(() => {
@@ -283,10 +280,10 @@ export default function Sidebar({
                 {userEmail}
               </span>
               <button
-                onClick={onLogout}
+                onClick={() => navigate("/dashboard/profile")}
                 className="text-[10px] text-muted-foreground hover:underline text-left"
               >
-                Log out
+                Profile
               </button>
             </div>
           </div>
