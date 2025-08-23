@@ -5,6 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Plus, Archive, Share2, Eye } from "lucide-react";
 
 type HeaderProps = {
   onNewNote: () => void;
@@ -35,28 +36,26 @@ export default function Header({
   isIndexPage = false,
   onToggleShare,
   isShared = false,
-  shareUrl,
-  onCopyShareUrl,
-  isCopyDisabled = true,
 }: HeaderProps) {
   return (
     <header className="border-b pb-3 mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       {/* Heading */}
-      <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left">
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
         Your Notes
       </h1>
 
       {/* Actions */}
       <TooltipProvider>
-        <div className="flex flex-wrap justify-center sm:justify-end gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap justify-center sm:justify-end gap-2">
           {/* View All Notes */}
           {onDeselect && !isIndexPage && (
             <Button
-              variant="secondary"
+              variant="ghost"
               onClick={onDeselect}
-              className="w-full sm:w-auto"
+              className="flex items-center gap-2"
             >
-              View All Notes
+              <Eye className="h-4 w-4" />
+              <span className="hidden sm:inline">View All</span>
             </Button>
           )}
 
@@ -64,13 +63,14 @@ export default function Header({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
+                variant="default"
                 onClick={onNewNote}
                 disabled={isNewDisabled}
                 aria-label="Create a new note"
-                className="w-full sm:w-auto"
+                className="flex items-center gap-2"
               >
-                + New Note
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New Note</span>
               </Button>
             </TooltipTrigger>
             {isNewDisabled && noteLimitReachedMessage && (
@@ -86,23 +86,27 @@ export default function Header({
               variant={isShared ? "secondary" : "outline"}
               onClick={onToggleShare}
               aria-label={isShared ? "Unshare this note" : "Share this note"}
-              className="w-full sm:w-auto"
+              className="flex items-center gap-2"
             >
-              {isShared ? "Unshare" : "Share"}
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">
+                {isShared ? "Unshare" : "Share"}
+              </span>
             </Button>
           )}
 
           {/* Archive */}
           <Button
-            variant="secondary"
+            variant="outline"
             onClick={onArchive}
             disabled={isArchiveDisabled}
             aria-label={
               showTableMode ? "Archive selected notes" : "Archive current note"
             }
-            className="w-full sm:w-auto"
+            className="flex items-center gap-2"
           >
-            Archive
+            <Archive className="h-4 w-4" />
+            <span className="hidden sm:inline">Archive</span>
           </Button>
         </div>
       </TooltipProvider>

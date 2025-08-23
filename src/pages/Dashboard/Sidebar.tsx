@@ -8,15 +8,9 @@ import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
-import { ArchiveIcon, TrashIcon, RotateCcwIcon } from "lucide-react";
+import { ArchiveIcon } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import ArchiveDialog from "./ArchiveDialog";
 
 type SidebarProps = {
   notes: Note[];
@@ -102,7 +96,7 @@ export default function Sidebar({
   });
 
   return (
-    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background font-typewriter z-50 md:fixed md:left-0 md:top-0 border-r border-border shadow-sm">
+    <aside className="w-full md:w-64 h-[100dvh] flex flex-col bg-background font-typewriter border-r border-border z-50 md:fixed md:left-0 md:top-0">
       {/* Header */}
       <div
         className="flex items-center gap-3 p-4 shrink-0 select-none cursor-pointer hover:bg-accent/30 transition-colors"
@@ -112,7 +106,7 @@ export default function Sidebar({
         <img
           src={inklineIcon}
           alt="InkLine Logo"
-          className="h-10 w-10 rounded-lg shadow-sm"
+          className="h-10 w-10 rounded-lg"
         />
         <h2 className="text-lg font-semibold tracking-wide">InkLine</h2>
         {onClose && (
@@ -132,24 +126,18 @@ export default function Sidebar({
 
       <Separator />
 
-      {/* Empty state */}
-      {!notes.length && (
-        <div className="flex-1 flex flex-col items-center justify-center text-sm text-muted-foreground p-6">
-          <p className="mb-3">You don’t have any notes yet.</p>
-          {onCreateNote && (
-            <Button size="sm" onClick={onCreateNote}>
-              Create a Note
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Notes list */}
-      {notes.length > 0 && (
-        <div
-          ref={parentRef}
-          className="flex-1 overflow-y-auto custom-scrollbar"
-        >
+      {/* Notes list (scrollable only) */}
+      <div ref={parentRef} className="flex-1 overflow-y-auto custom-scrollbar">
+        {!notes.length ? (
+          <div className="flex flex-col items-center justify-center text-sm text-muted-foreground p-6">
+            <p className="mb-3">You don’t have any notes yet.</p>
+            {onCreateNote && (
+              <Button size="sm" onClick={onCreateNote}>
+                Create a Note
+              </Button>
+            )}
+          </div>
+        ) : (
           <div
             style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
             className="relative w-full"
@@ -172,7 +160,7 @@ export default function Sidebar({
                       whileTap={{ scale: 0.98 }}
                       className={`group w-full flex items-center justify-between px-4 py-2 text-sm rounded-md transition-colors ${
                         item.note!.id === selectedId
-                          ? "bg-accent text-accent-foreground font-medium shadow-sm"
+                          ? "bg-accent text-accent-foreground font-medium"
                           : "hover:bg-accent/50"
                       }`}
                       onClick={() => onSelect(item.note!.id)}
@@ -213,12 +201,12 @@ export default function Sidebar({
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Footer */}
+      {/* Footer (always visible) */}
       <Separator />
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 shrink-0 bg-background">
         {/* Notes usage progress */}
         <div>
           <div className="flex justify-between text-xs text-muted-foreground mb-1">
@@ -236,67 +224,11 @@ export default function Sidebar({
         </div>
 
         {/* Archived Notes Dialog */}
-        <Dialog open={openArchive} onOpenChange={setOpenArchive}>
-          <DialogTrigger asChild>
-            <Button variant="secondary" size="sm" className="w-full">
-              <ArchiveIcon className="h-4 w-4 mr-2" /> View Archived
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Archived Notes</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {archivedNotes.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No archived notes.
-                </p>
-              )}
-              {archivedNotes.map((note) => (
-                <div
-                  key={note.id}
-                  className="flex items-center justify-between p-2 rounded-md hover:bg-accent/50"
-                >
-                  <span className="truncate">{note.title || "Untitled"}</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={async () => {
-                        await supabase
-                          .from("notes")
-                          .update({ archived: false })
-                          .eq("id", note.id);
-                        setArchivedNotes((prev) =>
-                          prev.filter((n) => n.id !== note.id)
-                        );
-                        setNotes((prev) => [
-                          { ...note, archived: false },
-                          ...prev,
-                        ]);
-                      }}
-                    >
-                      <RotateCcwIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-destructive"
-                      onClick={async () => {
-                        await supabase.from("notes").delete().eq("id", note.id);
-                        setArchivedNotes((prev) =>
-                          prev.filter((n) => n.id !== note.id)
-                        );
-                      }}
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ArchiveDialog
+          open={openArchive}
+          onOpenChange={setOpenArchive}
+          setNotes={setNotes}
+        />
 
         {/* User info */}
         <div className="flex items-center gap-3 text-sm p-2 rounded-md bg-muted/40">
