@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import DOMPurify from "dompurify";
+import NoteToolbar from "./NoteToolbar";
 
 type NoteEditorProps = {
   note: Note | null;
@@ -58,15 +59,14 @@ const NoteEditor = forwardRef(function NoteEditor(
 
   const editorRef = useRef<HTMLDivElement>(null);
 
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
-    const el = document.getElementById(
-      "note-title"
-    ) as HTMLTextAreaElement | null;
-    if (el) {
-      el.style.height = "auto"; // reset height
-      el.style.height = el.scrollHeight + "px"; // expand to fit content
+    if (titleRef.current) {
+      titleRef.current.style.height = "auto";
+      titleRef.current.style.height = titleRef.current.scrollHeight + "px";
     }
-  }, [title]);
+  }, [title, fontSize]);
 
   // Refs to track last-saved values to prevent unnecessary saves
   const lastSavedTitleRef = useRef<string>("");
@@ -251,122 +251,21 @@ const NoteEditor = forwardRef(function NoteEditor(
       style={{ maxWidth: "85ch", margin: "0 auto" }}
     >
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => formatText("bold")}
-                >
-                  <Bold size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Bold</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => formatText("italic")}
-                >
-                  <Italic size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Italic</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => formatText("underline")}
-                >
-                  <Underline size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Underline</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => formatText("strikeThrough")}
-                >
-                  <Strikethrough size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Strikethrough</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={decreaseFontSize}
-                  disabled={fontSize === "smallest"}
-                >
-                  <Minus size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Decrease font size</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={increaseFontSize}
-                  disabled={fontSize === "biggest"}
-                >
-                  <Plus size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Increase font size</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {saveStatus === "saving" && (
-            <Loader2 className="animate-spin w-4 h-4 text-muted-foreground" />
-          )}
-          {saveStatus === "saved" && (
-            <Check className="w-4 h-4 text-green-500" />
-          )}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={downloadAsTxt}
-                  disabled={
-                    !note || (editorRef.current?.innerText?.trim() ?? "") === ""
-                  }
-                  className="flex items-center gap-1"
-                >
-                  <Download size={16} /> .txt
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Download as text file</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
+      <NoteToolbar
+        formatText={formatText}
+        decreaseFontSize={decreaseFontSize}
+        increaseFontSize={increaseFontSize}
+        fontSize={fontSize}
+        saveStatus={saveStatus}
+        onDownload={downloadAsTxt}
+        canDownload={
+          !!note && (editorRef.current?.innerText?.trim() ?? "") !== ""
+        }
+      />
 
       {/* Title */}
       <textarea
-        id="note-title"
+        ref={titleRef}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Note title"
