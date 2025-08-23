@@ -1,26 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Note } from "@/types/Notes";
 import { supabase } from "@/lib/supabaseClient";
-import {
-  Download,
-  ChevronUp,
-  Plus,
-  Minus,
-  Check,
-  Loader2,
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-} from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ChevronUp } from "lucide-react";
 import DOMPurify from "dompurify";
 import NoteToolbar from "./NoteToolbar";
 
@@ -48,7 +29,7 @@ const NoteEditor = forwardRef(function NoteEditor(
   _ref
 ) {
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState(""); // sanitized HTML always
+  const [body, setBody] = useState(""); // always sanitized HTML
   const [charCount, setCharCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -58,22 +39,20 @@ const NoteEditor = forwardRef(function NoteEditor(
   );
 
   const editorRef = useRef<HTMLDivElement>(null);
-
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
+  // Track last-saved values
+  const lastSavedTitleRef = useRef<string>("");
+  const lastSavedBodyRef = useRef<string>("");
+  const initializingRef = useRef<boolean>(false);
+
+  // Adjust textarea height
   useEffect(() => {
     if (titleRef.current) {
       titleRef.current.style.height = "auto";
       titleRef.current.style.height = titleRef.current.scrollHeight + "px";
     }
   }, [title, fontSize]);
-
-  // Refs to track last-saved values to prevent unnecessary saves
-  const lastSavedTitleRef = useRef<string>("");
-  const lastSavedBodyRef = useRef<string>("");
-
-  // Prevent autosave right after loading a note
-  const initializingRef = useRef<boolean>(false);
 
   const toPlainText = (html: string) => {
     const temp = document.createElement("div");
@@ -86,7 +65,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     const plainText = toPlainText(sanitized);
 
     if (plainText.length <= MAX_CHARS) {
-      setBody(sanitized); // ✅ always sanitized
+      setBody(sanitized);
       setCharCount(plainText.length);
       setWordCount(
         plainText.trim() === "" ? 0 : plainText.trim().split(/\s+/).length
@@ -96,7 +75,7 @@ const NoteEditor = forwardRef(function NoteEditor(
       if (editorRef.current) {
         editorRef.current.innerText = trimmedText;
       }
-      setBody(trimmedText);
+      setBody(DOMPurify.sanitize(editorRef.current?.innerHTML || ""));
       setCharCount(MAX_CHARS);
       setWordCount(
         trimmedText.trim() === "" ? 0 : trimmedText.trim().split(/\s+/).length
@@ -104,7 +83,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   };
 
-  // Formatting using document.execCommand
+  // Formatting (still using execCommand for now)
   const formatText = (command: string) => {
     document.execCommand(command, false, "");
     if (editorRef.current) {
@@ -112,7 +91,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   };
 
-  // On Enter, insert a line break instead of paragraph
+  // Enter → line break
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter") {
       document.execCommand("insertLineBreak");
@@ -120,14 +99,13 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   };
 
-  // On typing/input
   const handleInput = () => {
     if (editorRef.current) {
       updateBodyFromHtml(editorRef.current.innerHTML);
     }
   };
 
-  // Load/switch note
+  // Load note
   useEffect(() => {
     if (!note) return;
 
@@ -146,7 +124,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     initializingRef.current = false;
   }, [note?.id]);
 
-  // Debounced autosave
+  // Autosave
   useEffect(() => {
     if (!note) return;
     if (initializingRef.current) return;
@@ -154,7 +132,6 @@ const NoteEditor = forwardRef(function NoteEditor(
     const deb = setTimeout(async () => {
       const titleChanged = title !== lastSavedTitleRef.current;
       const bodyChanged = body !== lastSavedBodyRef.current;
-
       if (!titleChanged && !bodyChanged) return;
 
       setSaveStatus("saving");
@@ -178,8 +155,8 @@ const NoteEditor = forwardRef(function NoteEditor(
       if (data) {
         onUpdate({
           ...note,
-          title, // ✅ sync latest title
-          body, // ✅ sync latest body
+          title,
+          body,
           updated_at: data.updated_at,
         });
       }
@@ -191,9 +168,18 @@ const NoteEditor = forwardRef(function NoteEditor(
     return () => clearTimeout(deb);
   }, [title, body, note?.id, onUpdate]);
 
-  // Scroll-to-top button visibility
+  // Scroll-to-top visibility (optimized with rAF)
   useEffect(() => {
-    const handleScroll = () => setShowScrollTop(window.scrollY > 200);
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setShowScrollTop(window.scrollY > 200);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -205,7 +191,6 @@ const NoteEditor = forwardRef(function NoteEditor(
       setFontSize(stored as FontSizeLevel);
     }
   }, []);
-
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, fontSize);
   }, [fontSize]);
@@ -224,15 +209,17 @@ const NoteEditor = forwardRef(function NoteEditor(
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Safe TXT download
   const downloadAsTxt = () => {
     if (!note) return;
     const plainText = toPlainText(editorRef.current?.innerHTML || body || "");
+    const safeTitle = (title || "note").replace(/[<>:"/\\|?*]+/g, "_");
     const content = `Title: ${title}\n\n${plainText}`;
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${title || "note"}.txt`;
+    link.download = `${safeTitle}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -274,10 +261,13 @@ const NoteEditor = forwardRef(function NoteEditor(
         className="w-full resize-none overflow-hidden text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none break-words"
       />
 
-      {/* Rich Text Body */}
+      {/* Body */}
       <div
         ref={editorRef}
         contentEditable
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Note body editor"
         data-gramm="false"
         data-placeholder="Start typing your note..."
         onInput={handleInput}
@@ -307,12 +297,12 @@ const NoteEditor = forwardRef(function NoteEditor(
 
       <style>
         {`
-    [contenteditable]:empty:before {
-      content: attr(data-placeholder);
-      color: var(--muted-foreground);
-      pointer-events: none;
-    }
-  `}
+          [contenteditable]:empty:before {
+            content: attr(data-placeholder);
+            color: var(--muted-foreground);
+            pointer-events: none;
+          }
+        `}
       </style>
     </div>
   );

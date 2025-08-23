@@ -10,6 +10,7 @@ import NoteEditor from "./NoteEditor";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NotesIndex from "./NotesIndex";
+import NotesDashboard from "./NotesDashboard";
 
 export default function NotesPage({ session }: { session: Session }) {
   const { id } = useParams<{ id?: string }>();
@@ -28,26 +29,35 @@ export default function NotesPage({ session }: { session: Session }) {
   const [copied, setCopied] = useState(false);
   const userId = session.user.id;
   const noteLimit = 100;
+  const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
 
   useEffect(() => {
     const fetchNotes = async () => {
-      const { data, error } = await supabase
+      const { data: active, error: activeError } = await supabase
         .from("notes")
         .select("*")
         .eq("user_id", userId)
-        .eq("archived", false) // ✅ only fetch active notes
+        .eq("archived", false)
         .order("updated_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching notes:", error.message);
+      const { data: archived, error: archivedError } = await supabase
+        .from("notes")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("archived", true)
+        .order("updated_at", { ascending: false });
+
+      if (activeError || archivedError) {
+        console.error("Error fetching notes:", activeError || archivedError);
       } else {
-        setNotes(data || []);
-        if (data && data.length > 0) {
+        setNotes(active || []);
+        setArchivedNotes(archived || []);
+        if (active && active.length > 0) {
           if (id) {
-            const exists = data.find((n) => n.id === id);
-            setSelectedNoteId(exists ? id : data[0].id);
+            const exists = active.find((n) => n.id === id);
+            setSelectedNoteId(exists ? id : active[0].id);
           } else {
-            setSelectedNoteId(data[0].id);
+            setSelectedNoteId(active[0].id);
           }
         }
       }
@@ -73,8 +83,8 @@ export default function NotesPage({ session }: { session: Session }) {
   };
 
   const handleNewNote = async () => {
-    if (notes.length >= noteLimit) {
-      alert("You have reached the maximum of 100 notes.");
+    if (notes.length + archivedNotes.length >= noteLimit) {
+      alert("You have reached the maximum of 100 notes (including archived).");
       return;
     }
 
@@ -164,6 +174,7 @@ export default function NotesPage({ session }: { session: Session }) {
               userEmail={session.user.email!}
               onClose={() => setMobileSidebarOpen(false)}
               setNotes={setNotes}
+              onCreateNote={handleNewNote}
             />
           </div>
         </div>
@@ -178,10 +189,11 @@ export default function NotesPage({ session }: { session: Session }) {
           userEmail={session.user.email!}
           onDeselect={() => handleSelectNote(null)}
           setNotes={setNotes}
+          onCreateNote={handleNewNote}
         />
       </div>
 
-      <div className="flex-1 p-4 md:p-6 relative md:ml-64">
+      <div className="flex-1 p-4 md:p-6 relative md:ml-30">
         <div className="md:hidden mb-4 flex justify-between items-center">
           <Button
             variant="ghost"
@@ -240,14 +252,14 @@ export default function NotesPage({ session }: { session: Session }) {
             </div>
           </div>
         ) : (
-          <div className="w-full">
-            <NotesIndex
-              selectedIds={selectedTableNoteIds}
-              setSelectedIds={setSelectedTableNoteIds}
-              notes={notes}
-              onSelectNote={handleSelectNote}
-            />
-          </div>
+          <NotesDashboard
+            notes={notes}
+            archivedNotes={archivedNotes}
+            onCreateNote={handleNewNote}
+            onSelectNote={handleSelectNote}
+            selectedIds={selectedTableNoteIds}
+            setSelectedIds={setSelectedTableNoteIds}
+          />
         )}
       </div>
     </div>

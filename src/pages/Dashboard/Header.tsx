@@ -60,25 +60,45 @@ export default function Header({
           )}
 
           {/* New Note */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="default"
-                onClick={onNewNote}
-                disabled={isNewDisabled}
-                aria-label="Create a new note"
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">New Note</span>
-              </Button>
-            </TooltipTrigger>
-            {isNewDisabled && noteLimitReachedMessage && (
-              <TooltipContent>
-                <span>{noteLimitReachedMessage}</span>
-              </TooltipContent>
-            )}
-          </Tooltip>
+          {!isIndexPage && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="default"
+                  onClick={onNewNote}
+                  disabled={isNewDisabled}
+                  aria-label="Create a new note"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">New Note</span>
+                </Button>
+              </TooltipTrigger>
+              {isNewDisabled && noteLimitReachedMessage && (
+                <TooltipContent>
+                  <span>{noteLimitReachedMessage}</span>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          )}
+
+          {/* Archive */}
+          {!isIndexPage && (
+            <Button
+              variant="outline"
+              onClick={onArchive}
+              disabled={isArchiveDisabled}
+              aria-label={
+                showTableMode
+                  ? "Archive selected notes"
+                  : "Archive current note"
+              }
+              className="flex items-center gap-2"
+            >
+              <Archive className="h-4 w-4" />
+              <span className="hidden sm:inline">Archive</span>
+            </Button>
+          )}
 
           {/* Share */}
           {onToggleShare && (
@@ -94,20 +114,6 @@ export default function Header({
               </span>
             </Button>
           )}
-
-          {/* Archive */}
-          <Button
-            variant="outline"
-            onClick={onArchive}
-            disabled={isArchiveDisabled}
-            aria-label={
-              showTableMode ? "Archive selected notes" : "Archive current note"
-            }
-            className="flex items-center gap-2"
-          >
-            <Archive className="h-4 w-4" />
-            <span className="hidden sm:inline">Archive</span>
-          </Button>
         </div>
       </TooltipProvider>
     </header>

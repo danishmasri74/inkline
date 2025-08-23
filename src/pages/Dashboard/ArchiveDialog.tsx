@@ -7,6 +7,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { ArchiveIcon, RotateCcwIcon, TrashIcon } from "lucide-react";
 import { Note } from "@/types/Notes";
@@ -16,14 +27,17 @@ type ArchiveDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
+  archivedNotes: Note[];
+  setArchivedNotes: React.Dispatch<React.SetStateAction<Note[]>>;
 };
 
 export default function ArchiveDialog({
   open,
   onOpenChange,
   setNotes,
+  archivedNotes,
+  setArchivedNotes,
 }: ArchiveDialogProps) {
-  const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -111,15 +125,35 @@ export default function ArchiveDialog({
                 >
                   <RotateCcwIcon className="h-4 w-4" />
                 </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 rounded-lg text-destructive hover:text-destructive"
-                  onClick={() => deleteNote(note.id)}
-                  title="Delete"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 rounded-lg text-destructive hover:text-destructive"
+                      title="Delete"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="rounded-xl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action is permanent and cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => deleteNote(note.id)}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           ))}
