@@ -14,6 +14,14 @@ import {
   Play,
   Square,
 } from "lucide-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DOMPurify from "dompurify";
@@ -177,9 +185,9 @@ export default function ShareNotePage() {
     description: string;
   }) => (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6">
-      <Card className="w-full max-w-lg border-muted bg-background">
+      <Card className="w-full max-w-lg border-muted bg-background/80 shadow-sm">
         <CardContent className="flex flex-col items-center text-center p-6 sm:p-12">
-          <div className="mb-6">{icon}</div>
+          <div className="mb-6 text-destructive/80">{icon}</div>
           <h2 className="text-lg sm:text-xl font-semibold mb-2">{title}</h2>
           <p className="text-sm sm:text-base text-muted-foreground mb-6">
             {description}
@@ -232,88 +240,92 @@ export default function ShareNotePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b bg-muted/40">
-        <Link to="/" className="flex items-center space-x-3">
-          <img src={appLogo} alt="App Logo" className="h-7 w-7" />
-          <span className="font-semibold text-base sm:text-lg">InkLine</span>
-        </Link>
+      <header className="sticky top-0 z-10 border-b bg-background/70 backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <img src={appLogo} alt="App Logo" className="h-7 w-7" />
+            <span className="font-semibold text-base sm:text-lg">InkLine</span>
+          </Link>
 
-        {/* Controls */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full sm:w-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyLink}
-            className="flex items-center justify-center gap-2 rounded-xl w-full sm:w-auto"
-          >
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-            {copied ? "Copied!" : "Copy Link"}
-          </Button>
-
-          <select
-            className="border rounded-xl px-3 py-2 text-sm bg-background w-full sm:w-auto"
-            value={selectedVoice}
-            onChange={(e) => setSelectedVoice(e.target.value)}
-          >
-            {voices.map((voice) => (
-              <option key={voice.name} value={voice.name}>
-                {voice.name}{" "}
-                {voice.lang.includes("en") ? "" : `(${voice.lang})`}
-              </option>
-            ))}
-          </select>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSpeak}
-            className="flex items-center justify-center gap-2 rounded-xl w-full sm:w-auto"
-          >
-            {isSpeaking ? (
-              isPaused ? (
-                <Play size={16} />
-              ) : (
-                <Pause size={16} />
-              )
-            ) : (
-              <Volume2 size={16} />
-            )}
-            {isSpeaking ? (isPaused ? "Resume" : "Pause") : "Listen"}
-          </Button>
-
-          {isSpeaking && (
+          {/* Controls */}
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center justify-center">
             <Button
-              variant="destructive"
+              variant="outline"
               size="sm"
-              onClick={handleStop}
-              className="flex items-center justify-center gap-2 rounded-xl w-full sm:w-auto"
+              onClick={handleCopyLink}
+              className="flex items-center gap-2 rounded-xl"
             >
-              <Square size={16} />
-              Stop
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? "Copied!" : "Copy Link"}
             </Button>
-          )}
+
+            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+              <SelectTrigger className="w-full sm:w-[220px] rounded-xl">
+                <SelectValue placeholder="Choose voice" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {voices.map((voice) => (
+                  <SelectItem key={voice.name} value={voice.name}>
+                    {voice.name}{" "}
+                    {voice.lang.includes("en") ? "" : `(${voice.lang})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSpeak}
+              className="flex items-center gap-2 rounded-xl"
+            >
+              {isSpeaking ? (
+                isPaused ? (
+                  <Play size={16} />
+                ) : (
+                  <Pause size={16} />
+                )
+              ) : (
+                <Volume2 size={16} />
+              )}
+              {isSpeaking ? (isPaused ? "Resume" : "Pause") : "Listen"}
+            </Button>
+
+            {isSpeaking && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleStop}
+                className="flex items-center gap-2 rounded-xl"
+              >
+                <Square size={16} />
+                Stop
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Note content */}
       <main className="max-w-3xl mx-auto p-4 sm:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4">
-          {note.title}
-        </h1>
-        <p className="text-sm text-muted-foreground mb-6">
-          {readingTime}
-          {wordCount !== null &&
-            wordCount >= 50 &&
-            ` (${formatNumber(wordCount)} words)`}{" "}
-          • Last updated {new Date(note.updated_at).toLocaleString()}
-          {note.view_count !== undefined && (
-            <> • {formatNumber(note.view_count)} views</>
-          )}
-        </p>
-        <div
-          className="prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-all"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.body) }}
-        />
+        <Card className="p-6 sm:p-10 shadow-sm">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-3">{note.title}</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            {readingTime}
+            {wordCount !== null &&
+              wordCount >= 50 &&
+              ` (${formatNumber(wordCount)} words)`}{" "}
+            • Last updated {new Date(note.updated_at).toLocaleString()}
+            {note.view_count !== undefined && (
+              <> • {formatNumber(note.view_count)} views</>
+            )}
+          </p>
+          <div
+            className="prose prose-lg sm:prose-xl prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-words"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.body) }}
+          />
+        </Card>
       </main>
     </div>
   );
