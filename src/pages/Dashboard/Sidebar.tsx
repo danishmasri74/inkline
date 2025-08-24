@@ -14,11 +14,13 @@ import ArchiveDialog from "./ArchiveDialog";
 import { useNavigate } from "react-router-dom";
 
 type SidebarProps = {
-  notes: Note[]; // 🟢 now ONLY active notes
+  notes: Note[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onLogout: () => void;
   userEmail: string;
+  displayName?: string | null;
+  username?: string | null;
   onClose?: () => void;
   onDeselect?: () => void;
   onCreateNote?: () => void;
@@ -31,8 +33,9 @@ export default function Sidebar({
   notes,
   selectedId,
   onSelect,
-  onLogout,
   userEmail,
+  displayName,
+  username,
   onClose,
   onDeselect,
   onCreateNote,
@@ -274,11 +277,13 @@ export default function Sidebar({
           {/* User */}
           <div className="flex items-center gap-2 text-xs p-1.5 rounded-md bg-muted/40">
             <Avatar className="h-7 w-7 border">
-              <AvatarFallback>{getInitial(userEmail)}</AvatarFallback>
+              <AvatarFallback>
+                {getInitial(displayName || username || userEmail)}
+              </AvatarFallback>
             </Avatar>
             <div className="flex flex-col truncate">
               <span className="truncate font-medium text-[11px]">
-                {userEmail}
+                {displayName || username || userEmail}
               </span>
               <button
                 onClick={() => navigate("/dashboard/profile")}

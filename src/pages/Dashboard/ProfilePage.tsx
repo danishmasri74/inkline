@@ -51,6 +51,12 @@ export default function ProfilePage({ session }: { session: Session }) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
+    null
+  );
+  const [checkingUsername, setCheckingUsername] = useState(false);
+
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
@@ -75,21 +81,97 @@ export default function ProfilePage({ session }: { session: Session }) {
     fetchProfile();
   }, [id, session.user.id]);
 
+  useEffect(() => {
+    if (!isOwner || !profile?.username) return;
+
+    const handler = setTimeout(async () => {
+      const username = profile.username.trim();
+
+      if (!username) {
+        setUsernameError("Username cannot be blank.");
+        setUsernameAvailable(false);
+        return;
+      }
+
+      setCheckingUsername(true);
+
+      const { data: existing, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username)
+        .neq("id", session.user.id)
+        .maybeSingle();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error checking username:", error.message);
+        setUsernameError("Error checking username.");
+        setUsernameAvailable(false);
+      } else if (existing) {
+        setUsernameError("This username is already taken.");
+        setUsernameAvailable(false);
+      } else {
+        setUsernameError(null);
+        setUsernameAvailable(true);
+      }
+
+      setCheckingUsername(false);
+    }, 500); // debounce
+
+    return () => clearTimeout(handler);
+  }, [profile?.username, isOwner, session.user.id]);
+
   const handleSave = async () => {
     if (!profile) return;
+
+    // Validate username
+    if (!profile.username.trim()) {
+      alert("Username cannot be blank.");
+      return;
+    }
+
     setSaving(true);
 
+    // Check uniqueness before saving
+    const { data: existing, error: checkError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", profile.username.trim())
+      .neq("id", session.user.id) // ignore current user
+      .single();
+
+    if (existing) {
+      alert("This username is already taken.");
+      setSaving(false);
+      return;
+    }
+
+    if (checkError && checkError.code !== "PGRST116") {
+      // PGRST116 = no rows found (safe to ignore)
+      console.error("Error checking username:", checkError.message);
+      setSaving(false);
+      return;
+    }
+
+    // Safe to update
     const { error } = await supabase
       .from("profiles")
       .update({
-        username: profile.username,
+        username: profile.username.trim(),
         display_name: profile.display_name,
         bio: profile.bio,
         is_public: profile.is_public,
       })
       .eq("id", session.user.id);
 
-    if (error) console.error("Error updating profile:", error.message);
+    if (error) {
+      console.error("Error updating profile:", error.message);
+      alert("Failed to update profile.");
+    }
+
+    if (usernameError) {
+      alert("Please fix the username issue before saving.");
+      return;
+    }
 
     setSaving(false);
   };
@@ -174,12 +256,26 @@ export default function ProfilePage({ session }: { session: Session }) {
           <div className="space-y-2">
             <label className="text-sm font-medium">Username</label>
             {isOwner ? (
-              <Input
-                value={profile.username}
-                onChange={(e) =>
-                  setProfile({ ...profile, username: e.target.value })
-                }
-              />
+              <>
+                <Input
+                  value={profile.username}
+                  maxLength={30}
+                  onChange={(e) =>
+                    setProfile({ ...profile, username: e.target.value })
+                  }
+                />
+                {checkingUsername && (
+                  <p className="text-xs text-muted-foreground">Checking...</p>
+                )}
+                {usernameError && (
+                  <p className="text-xs text-red-500">{usernameError}</p>
+                )}
+                {!usernameError && usernameAvailable && !checkingUsername && (
+                  <p className="text-xs text-green-600">
+                    ✅ Username available
+                  </p>
+                )}
+              </>
             ) : (
               <p className="text-sm font-mono text-muted-foreground">
                 @{profile.username}

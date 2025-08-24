@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from "recharts";
 import { supabase } from "@/lib/supabaseClient";
+import { Badge } from "@/components/ui/badge";
 
 type NotesDashboardProps = {
   notes: Note[];
@@ -294,12 +295,19 @@ export default function NotesDashboard({
             <button
               key={note.id}
               onClick={() => onSelectNote(note.id)}
-              className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-md hover:bg-accent/50 transition"
+              className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left rounded-md hover:bg-accent/50 transition"
             >
-              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="truncate text-sm">
-                {note.title || "Untitled"}
-              </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="truncate text-sm">
+                  {note.title || "Untitled"}
+                </span>
+              </div>
+              {note.category?.name && (
+                <Badge variant="secondary" className="flex-shrink-0">
+                  {note.category.name}
+                </Badge>
+              )}
             </button>
           ))}
           {!notes.length && (

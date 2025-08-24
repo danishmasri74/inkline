@@ -29,6 +29,8 @@ export default function NotesPage({ session }: { session: Session }) {
   );
   const [copied, setCopied] = useState(false);
   const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
 
   const userId = session.user.id;
   const noteLimit = 100;
@@ -113,6 +115,23 @@ export default function NotesPage({ session }: { session: Session }) {
 
     fetchNotes();
   }, [userId, id]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("id", userId)
+        .single();
+
+      if (!error && data) {
+        setDisplayName(data.display_name);
+        setUsername(data.username);
+      }
+    };
+
+    if (userId) fetchProfile();
+  }, [userId]);
 
   const selectedNote = notes.find((note) => note.id === selectedNoteId) || null;
 
@@ -220,6 +239,8 @@ export default function NotesPage({ session }: { session: Session }) {
               }}
               onLogout={handleLogout}
               userEmail={session.user.email!}
+              displayName={displayName}
+              username={username}
               onClose={() => setMobileSidebarOpen(false)}
               setNotes={setNotes}
               onCreateNote={handleNewNote}
@@ -236,6 +257,8 @@ export default function NotesPage({ session }: { session: Session }) {
           onSelect={handleSelectNote}
           onLogout={handleLogout}
           userEmail={session.user.email!}
+          displayName={displayName}
+          username={username}
           onDeselect={() => handleSelectNote(null)}
           setNotes={setNotes}
           onCreateNote={handleNewNote}
