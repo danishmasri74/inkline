@@ -79,12 +79,7 @@ export default function App() {
             <NotesPage session={session!} />
           </ProtectedRoute>
         }
-      >
-        {/* 👇 Child routes inside the NotesPage layout */}
-        <Route index element={<NotesDashboard />} />
-        <Route path="note/:id" element={<NoteEditor />} />
-        <Route path="profile" element={<ProfilePage session={session!} />} />
-      </Route>
+      />
 
       {/* Root & Catch-All */}
       <Route
