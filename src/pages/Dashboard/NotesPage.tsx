@@ -283,15 +283,12 @@ export default function NotesPage({ session }: { session: Session }) {
         ) : (
           <>
             <Header
-              onNewNote={handleNewNote}
               onArchive={handleArchiveNote}
               isArchiveDisabled={
                 selectedNote
                   ? !selectedNoteId
                   : selectedTableNoteIds.length === 0
               }
-              isNewDisabled={notes.length >= noteLimit}
-              noteLimitReachedMessage="You’ve reached the maximum of 100 notes."
               onDeselect={() => handleSelectNote(null)}
               isIndexPage={!selectedNoteId}
               onToggleShare={selectedNote ? handleToggleShare : undefined}
