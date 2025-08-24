@@ -37,14 +37,46 @@ export default function NotesPage({ session }: { session: Session }) {
     const fetchNotes = async () => {
       const { data: active, error: activeError } = await supabase
         .from("notes")
-        .select("*")
+        .select(
+          `
+    id,
+    user_id,
+    title,
+    body,
+    created_at,
+    updated_at,
+    is_public,
+    share_id,
+    archived,
+    view_count,
+    last_viewed_at,
+    category_id,
+    category:categories!notes_category_id_fkey (id, name)
+  `
+        )
         .eq("user_id", userId)
         .eq("archived", false)
         .order("updated_at", { ascending: false });
 
       const { data: archived, error: archivedError } = await supabase
         .from("notes")
-        .select("*")
+        .select(
+          `
+    id,
+    user_id,
+    title,
+    body,
+    created_at,
+    updated_at,
+    is_public,
+    share_id,
+    archived,
+    view_count,
+    last_viewed_at,
+    category_id,
+    category:categories!notes_category_id_fkey (id, name)
+  `
+        )
         .eq("user_id", userId)
         .eq("archived", true)
         .order("updated_at", { ascending: false });
@@ -52,17 +84,30 @@ export default function NotesPage({ session }: { session: Session }) {
       if (activeError || archivedError) {
         console.error("Error fetching notes:", activeError || archivedError);
       } else {
-        setNotes(active || []);
-        setArchivedNotes(archived || []);
-        if (active && active.length > 0) {
+        const normalize = (arr: any[] = []): Note[] =>
+          arr.map((n) => ({
+            ...n,
+            category: Array.isArray(n.category)
+              ? n.category[0] ?? null
+              : n.category,
+          }));
+
+        const formattedActive = normalize(active);
+        const formattedArchived = normalize(archived);
+
+        setNotes(formattedActive);
+        setArchivedNotes(formattedArchived);
+
+        if (formattedActive.length > 0) {
           if (id) {
-            const exists = active.find((n) => n.id === id);
-            setSelectedNoteId(exists ? id : active[0].id);
+            const exists = formattedActive.find((n) => n.id === id);
+            setSelectedNoteId(exists ? id : formattedActive[0].id);
           } else {
-            setSelectedNoteId(active[0].id);
+            setSelectedNoteId(formattedActive[0].id);
           }
         }
       }
+
       setLoading(false);
     };
 

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Note } from "@/types/Notes";
 import { PlusCircle, FileText, BarChart3 } from "lucide-react";
 import NotesTable from "./NotesTable";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction } from "react";
 import {
   PieChart,
   Pie,
@@ -15,65 +15,22 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 
 type NotesDashboardProps = {
-  onCreateNote?: () => void;
-  onSelectNote?: (id: string) => void;
-  selectedIds?: string[];
-  setSelectedIds?: Dispatch<SetStateAction<string[]>>;
+  notes: Note[];
+  archivedNotes: Note[];
+  onCreateNote: () => void;
+  onSelectNote: (id: string) => void;
+  selectedIds: string[];
+  setSelectedIds: Dispatch<SetStateAction<string[]>>;
 };
 
 export default function NotesDashboard({
+  notes,
+  archivedNotes,
   onCreateNote = () => {},
   onSelectNote = () => {},
   selectedIds = [],
   setSelectedIds = () => {},
 }: NotesDashboardProps) {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
-
-  useEffect(() => {
-    fetchNotes();
-  }, []);
-
-  const fetchNotes = async () => {
-    const { data, error } = await supabase
-      .from("notes")
-      .select(
-        `
-          id,
-          user_id,
-          title,
-          body,
-          created_at,
-          updated_at,
-          is_public,
-          share_id,
-          archived,
-          view_count,
-          last_viewed_at,
-          category_id,
-          category:categories!notes_category_id_fkey (id, name)
-        `
-      )
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Failed to fetch notes:", error.message);
-      return;
-    }
-
-    if (data) {
-      const formatted: Note[] = data.map((n) => ({
-        ...n,
-        category: Array.isArray(n.category)
-          ? n.category[0] ?? null
-          : n.category,
-      }));
-
-      setNotes(formatted.filter((n) => !n.archived));
-      setArchivedNotes(formatted.filter((n) => n.archived));
-    }
-  };
-
   // --- helpers ---
   const getWordCount = (html: string = ""): number => {
     const text = html
