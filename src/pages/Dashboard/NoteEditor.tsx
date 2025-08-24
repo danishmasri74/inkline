@@ -4,10 +4,16 @@ import { supabase } from "@/lib/supabaseClient";
 import { ChevronUp } from "lucide-react";
 import DOMPurify from "dompurify";
 import NoteToolbar from "./NoteToolbar";
+import CategorySelector from "./CategorySelector";
 
 type NoteEditorProps = {
   note?: Note | null;
   onUpdate?: (updatedNote: Note) => void;
+};
+
+type Category = {
+  id: string;
+  name: string;
 };
 
 const FONT_SIZES = ["smallest", "small", "regular", "big", "biggest"] as const;
@@ -29,7 +35,7 @@ const NoteEditor = forwardRef(function NoteEditor(
   _ref
 ) {
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState(""); // always sanitized HTML
+  const [body, setBody] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -38,22 +44,20 @@ const NoteEditor = forwardRef(function NoteEditor(
     "idle"
   );
 
+  // category states
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [newCategory, setNewCategory] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
+
   const editorRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
-  // Track last-saved values
   const lastSavedTitleRef = useRef<string>("");
   const lastSavedBodyRef = useRef<string>("");
   const initializingRef = useRef<boolean>(false);
 
-  // Adjust textarea height
-  useEffect(() => {
-    if (titleRef.current) {
-      titleRef.current.style.height = "auto";
-      titleRef.current.style.height = titleRef.current.scrollHeight + "px";
-    }
-  }, [title, fontSize]);
-
+  // ===== Helpers =====
   const toPlainText = (html: string) => {
     const temp = document.createElement("div");
     temp.innerHTML = html;
@@ -83,29 +87,50 @@ const NoteEditor = forwardRef(function NoteEditor(
     }
   };
 
-  // Formatting (still using execCommand for now)
-  const formatText = (command: string) => {
-    document.execCommand(command, false, "");
-    if (editorRef.current) {
-      updateBodyFromHtml(editorRef.current.innerHTML);
+  // ===== Category Functions =====
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name")
+      .order("name");
+
+    if (!error && data) {
+      setCategories(data);
     }
   };
 
-  // Enter → line break
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter") {
-      document.execCommand("insertLineBreak");
-      e.preventDefault();
+  const handleCreateCategory = async () => {
+    if (!newCategory.trim()) return;
+    const { data, error } = await supabase.rpc("upsert_category", {
+      p_name: newCategory,
+    });
+
+    if (error) {
+      console.error("Create category failed:", error.message);
+      return;
+    }
+
+    await fetchCategories();
+    setSelectedCategory(data);
+    setNewCategory("");
+    setCreatingCategory(false);
+
+    // update note with new category
+    if (note) {
+      await supabase
+        .from("notes")
+        .update({ category_id: data })
+        .eq("id", note.id);
     }
   };
 
-  const handleInput = () => {
-    if (editorRef.current) {
-      updateBodyFromHtml(editorRef.current.innerHTML);
-    }
-  };
+  // ===== Effects =====
+  useEffect(() => {
+    if (!note) return;
+    fetchCategories();
+  }, [note?.id]);
 
-  // Load note
+  // Load note content
   useEffect(() => {
     if (!note) return;
 
@@ -121,10 +146,12 @@ const NoteEditor = forwardRef(function NoteEditor(
     updateBodyFromHtml(note.body || "");
     lastSavedBodyRef.current = DOMPurify.sanitize(note.body || "");
 
+    setSelectedCategory(note.category_id || null);
+
     initializingRef.current = false;
   }, [note?.id]);
 
-  // Autosave
+  // Autosave note text
   useEffect(() => {
     if (!note) return;
     if (initializingRef.current) return;
@@ -168,7 +195,7 @@ const NoteEditor = forwardRef(function NoteEditor(
     return () => clearTimeout(deb);
   }, [title, body, note?.id, onUpdate]);
 
-  // Scroll-to-top visibility (optimized with rAF)
+  // ===== Font size / scroll =====
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -184,7 +211,6 @@ const NoteEditor = forwardRef(function NoteEditor(
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Font size persistence
   useEffect(() => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY) as FontSizeLevel;
     if (stored && (FONT_SIZES as readonly string[]).includes(stored)) {
@@ -199,12 +225,10 @@ const NoteEditor = forwardRef(function NoteEditor(
     const idx = FONT_SIZES.indexOf(fontSize);
     if (idx < FONT_SIZES.length - 1) setFontSize(FONT_SIZES[idx + 1]);
   };
-
   const decreaseFontSize = () => {
     const idx = FONT_SIZES.indexOf(fontSize);
     if (idx > 0) setFontSize(FONT_SIZES[idx - 1]);
   };
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -239,7 +263,12 @@ const NoteEditor = forwardRef(function NoteEditor(
     >
       {/* Toolbar */}
       <NoteToolbar
-        formatText={formatText}
+        formatText={(cmd) => {
+          document.execCommand(cmd, false, "");
+          if (editorRef.current) {
+            updateBodyFromHtml(editorRef.current.innerHTML);
+          }
+        }}
         decreaseFontSize={decreaseFontSize}
         increaseFontSize={increaseFontSize}
         fontSize={fontSize}
@@ -261,6 +290,15 @@ const NoteEditor = forwardRef(function NoteEditor(
         className="w-full resize-none overflow-hidden text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none break-words"
       />
 
+      {/* Category Selector */}
+      <CategorySelector
+        noteId={note.id}
+        initialCategoryId={note.category_id}
+        onCategoryChange={(catId) => {
+          console.log("Category updated:", catId);
+        }}
+      />
+
       {/* Body */}
       <div
         ref={editorRef}
@@ -270,8 +308,17 @@ const NoteEditor = forwardRef(function NoteEditor(
         aria-label="Note body editor"
         data-gramm="false"
         data-placeholder="Start typing your note..."
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
+        onInput={() => {
+          if (editorRef.current) {
+            updateBodyFromHtml(editorRef.current.innerHTML);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            document.execCommand("insertLineBreak");
+            e.preventDefault();
+          }
+        }}
         style={{
           fontSize: FONT_SIZE_STYLES[fontSize],
           outline: "none",

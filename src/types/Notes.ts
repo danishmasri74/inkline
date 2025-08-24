@@ -10,4 +10,11 @@ export type Note = {
   archived: boolean;
   view_count: number;
   last_viewed_at: string | null;
+  category_id: string | null;
+
+  // optional relation if joined in query
+  category?: {
+    id: string;
+    name: string;
+  } | null;
 };

@@ -3,63 +3,107 @@ import { Button } from "@/components/ui/button";
 import { Note } from "@/types/Notes";
 import { PlusCircle, FileText, BarChart3 } from "lucide-react";
 import NotesTable from "./NotesTable";
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+} from "recharts";
+import { supabase } from "@/lib/supabaseClient";
 
 type NotesDashboardProps = {
-  notes?: Note[];
-  archivedNotes?: Note[];
   onCreateNote?: () => void;
   onSelectNote?: (id: string) => void;
   selectedIds?: string[];
   setSelectedIds?: Dispatch<SetStateAction<string[]>>;
 };
 
-// --- helpers ---
-function getWordCount(html: string = ""): number {
-  try {
-    const text = html
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!text) return 0;
-    return text.split(" ").filter(Boolean).length;
-  } catch {
-    return html.split(/\s+/).filter(Boolean).length;
-  }
-}
-
-function avgWordCount(list: Note[]): number {
-  if (list.length === 0) return 0;
-  const totalWords = list.reduce(
-    (acc, n) => acc + getWordCount(n.body || ""),
-    0
-  );
-  return Math.round(totalWords / list.length);
-}
-
 export default function NotesDashboard({
-  notes = [],
-  archivedNotes = [],
   onCreateNote = () => {},
   onSelectNote = () => {},
   selectedIds = [],
   setSelectedIds = () => {},
 }: NotesDashboardProps) {
-  const totalNotes = notes.length + archivedNotes.length;
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
+  const fetchNotes = async () => {
+    const { data, error } = await supabase
+      .from("notes")
+      .select(
+        `
+          id,
+          user_id,
+          title,
+          body,
+          created_at,
+          updated_at,
+          is_public,
+          share_id,
+          archived,
+          view_count,
+          last_viewed_at,
+          category_id,
+          category:categories!notes_category_id_fkey (id, name)
+        `
+      )
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Failed to fetch notes:", error.message);
+      return;
+    }
+
+    if (data) {
+      const formatted: Note[] = data.map((n) => ({
+        ...n,
+        category: Array.isArray(n.category)
+          ? n.category[0] ?? null
+          : n.category,
+      }));
+
+      setNotes(formatted.filter((n) => !n.archived));
+      setArchivedNotes(formatted.filter((n) => n.archived));
+    }
+  };
+
+  // --- helpers ---
+  const getWordCount = (html: string = ""): number => {
+    const text = html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return text ? text.split(" ").filter(Boolean).length : 0;
+  };
+
+  const avgWordCount = (list: Note[]): number => {
+    if (!list.length) return 0;
+    return Math.round(
+      list.reduce((acc, n) => acc + getWordCount(n.body), 0) / list.length
+    );
+  };
+
+  const allNotes = [...notes, ...archivedNotes];
+  const totalNotes = allNotes.length;
   const remaining = 100 - totalNotes;
 
   const now = new Date();
   const month = now.getMonth();
-  const allNotes = [...notes, ...archivedNotes];
-
   const notesThisMonth = allNotes.filter((n) => {
-    const d = new Date(n.created_at || "");
+    const d = new Date(n.created_at);
     return d.getMonth() === month && d.getFullYear() === now.getFullYear();
   });
 
   const weekdayCounts = Array(7).fill(0);
   notesThisMonth.forEach((n) => {
-    const d = new Date(n.created_at || "");
+    const d = new Date(n.created_at);
     if (!isNaN(d.getTime())) weekdayCounts[d.getDay()]++;
   });
   const weekdays = [
@@ -81,11 +125,36 @@ export default function NotesDashboard({
 
   const avgThisMonth = avgWordCount(notesThisMonth);
   const prevMonth = (month - 1 + 12) % 12;
-  const prevMonthNotes = allNotes.filter((n) => {
-    const d = new Date(n.created_at || "");
-    return d.getMonth() === prevMonth && d.getFullYear() === now.getFullYear();
+  const avgPrevMonth = avgWordCount(
+    allNotes.filter((n) => {
+      const d = new Date(n.created_at);
+      return (
+        d.getMonth() === prevMonth && d.getFullYear() === now.getFullYear()
+      );
+    })
+  );
+
+  // --- Pie chart data ---
+  const categoryCounts: Record<string, number> = {};
+  allNotes.forEach((n) => {
+    const cat = n.category?.name || "Unassigned";
+    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
   });
-  const avgPrevMonth = avgWordCount(prevMonthNotes);
+
+  const categoryData = Object.entries(categoryCounts).map(([name, value]) => ({
+    name,
+    value,
+  }));
+  const COLORS = [
+    "#4f46e5",
+    "#22c55e",
+    "#eab308",
+    "#ef4444",
+    "#06b6d4",
+    "#a855f7",
+    "#f97316",
+    "#3b82f6",
+  ];
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -174,6 +243,70 @@ export default function NotesDashboard({
             </CardContent>
           </Card>
 
+          {/* Pie chart */}
+          <Card className="sm:col-span-2 lg:col-span-3">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">
+                Notes by Category
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {categoryData.length > 0 ? (
+                <div className="w-full h-64 sm:h-72 overflow-x-auto">
+                  <div className="min-w-[300px] h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={categoryData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={80}
+                          paddingAngle={3}
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name} ${
+                              percent !== undefined
+                                ? (percent * 100).toFixed(0)
+                                : 0
+                            }%`
+                          }
+                        >
+                          {categoryData.map((_, i) => (
+                            <Cell
+                              key={`cell-${i}`}
+                              fill={COLORS[i % COLORS.length]}
+                              stroke="#fff"
+                              strokeWidth={2}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value, name) => [`${value} notes`, name]}
+                          contentStyle={{
+                            borderRadius: "0.5rem",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                          }}
+                        />
+                        <Legend
+                          verticalAlign="bottom"
+                          align="center"
+                          wrapperStyle={{ fontSize: "0.75rem" }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  No notes available
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {mostViewed && (
             <Card className="sm:col-span-2 lg:col-span-3">
               <CardHeader className="pb-2">
@@ -210,7 +343,7 @@ export default function NotesDashboard({
               </span>
             </button>
           ))}
-          {notes.length === 0 && (
+          {!notes.length && (
             <p className="text-sm text-muted-foreground italic">
               No notes yet. Create your first one!
             </p>
@@ -218,7 +351,7 @@ export default function NotesDashboard({
         </div>
       </section>
 
-      {/* Table (scrollable on small screens) */}
+      {/* Notes table */}
       <div className="overflow-x-auto">
         <NotesTable
           notes={notes}
