@@ -44,6 +44,13 @@ export default function ProfilePage({ session }: { session: Session }) {
   const [saving, setSaving] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
 
+  // state for change password
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
@@ -88,8 +95,40 @@ export default function ProfilePage({ session }: { session: Session }) {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Error signing out:", error.message);
+      return;
+    }
     navigate("/login");
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+
+    setChangingPassword(true);
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      setPasswordError(error.message);
+    } else {
+      setPasswordSuccess("Password updated successfully!");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+
+    setChangingPassword(false);
   };
 
   if (loading) {
@@ -240,12 +279,60 @@ export default function ProfilePage({ session }: { session: Session }) {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>
-                      Logout
+                    <AlertDialogAction asChild>
+                      <Button variant="destructive" onClick={handleLogout}>
+                        Logout
+                      </Button>
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            </div>
+          )}
+
+          {/* Change Password */}
+          {isOwner && (
+            <div className="space-y-4 border-t pt-6 mt-6">
+              <h3 className="text-lg font-semibold">Change Password</h3>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">New Password</label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Confirm Password</label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+
+              {passwordError && (
+                <p className="text-sm text-red-500">{passwordError}</p>
+              )}
+              {passwordSuccess && (
+                <p className="text-sm text-green-500">{passwordSuccess}</p>
+              )}
+
+              <Button
+                onClick={handleChangePassword}
+                disabled={changingPassword}
+              >
+                {changingPassword ? (
+                  <>
+                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                    Changing...
+                  </>
+                ) : (
+                  "Change Password"
+                )}
+              </Button>
             </div>
           )}
         </CardContent>

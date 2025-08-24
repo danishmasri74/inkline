@@ -50,6 +50,7 @@ export default function NotesDashboard({
   const allNotes = [...notes, ...archivedNotes];
   const totalNotes = allNotes.length;
   const remaining = 100 - totalNotes;
+  const publicCount = allNotes.filter((n) => n.is_public).length;
 
   const now = new Date();
   const month = now.getMonth();
@@ -152,7 +153,8 @@ export default function NotesDashboard({
             <CardContent>
               <p className="text-3xl font-bold">{totalNotes}</p>
               <p className="text-xs text-muted-foreground">
-                {notes.length} active, {archivedNotes.length} archived
+                {notes.length} active, {archivedNotes.length} archived,{" "}
+                {publicCount} public
               </p>
             </CardContent>
           </Card>

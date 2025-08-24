@@ -189,6 +189,7 @@ export default function Sidebar({
                 return (
                   <div
                     key={virtualRow.key}
+                    data-index={virtualRow.index}
                     ref={rowVirtualizer.measureElement}
                     className="absolute top-0 left-0 right-0"
                     style={{ transform: `translateY(${virtualRow.start}px)` }}
@@ -198,7 +199,7 @@ export default function Sidebar({
                         {item.label}
                       </div>
                     ) : (
-                      <motion.button
+                      <motion.div
                         whileTap={{ scale: 0.98 }}
                         className={`group w-full flex items-center justify-between px-3 py-1.5 text-xs rounded-md transition-colors text-left truncate
                         ${
@@ -242,7 +243,7 @@ export default function Sidebar({
                         >
                           <ArchiveIcon className="h-3.5 w-3.5" />
                         </Button>
-                      </motion.button>
+                      </motion.div>
                     )}
                   </div>
                 );
