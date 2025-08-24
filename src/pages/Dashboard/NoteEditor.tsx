@@ -279,6 +279,15 @@ const NoteEditor = forwardRef(function NoteEditor(
         }
       />
 
+      {/* Category Selector */}
+      <CategorySelector
+        noteId={note.id}
+        initialCategoryId={note.category_id}
+        onCategoryChange={(catId) => {
+          console.log("Category updated:", catId);
+        }}
+      />
+
       {/* Title */}
       <textarea
         ref={titleRef}
@@ -288,15 +297,6 @@ const NoteEditor = forwardRef(function NoteEditor(
         rows={1}
         style={{ fontSize: FONT_SIZE_STYLES[fontSize] }}
         className="w-full resize-none overflow-hidden text-3xl mb-6 font-bold font-typewriter bg-transparent border-none p-0 focus:outline-none break-words"
-      />
-
-      {/* Category Selector */}
-      <CategorySelector
-        noteId={note.id}
-        initialCategoryId={note.category_id}
-        onCategoryChange={(catId) => {
-          console.log("Category updated:", catId);
-        }}
       />
 
       {/* Body */}
