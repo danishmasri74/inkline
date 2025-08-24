@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Note } from "@/types/Notes";
 import { PlusCircle, FileText, BarChart3 } from "lucide-react";
 import NotesTable from "./NotesTable";
@@ -12,7 +13,6 @@ import {
   Legend,
   Tooltip,
 } from "recharts";
-import { supabase } from "@/lib/supabaseClient";
 import { Badge } from "@/components/ui/badge";
 
 type NotesDashboardProps = {
@@ -126,207 +126,229 @@ export default function NotesDashboard({
         </Button>
       </div>
 
-      {/* Insights */}
-      <section>
-        <h2 className="text-sm font-medium mb-3 flex items-center gap-2 text-muted-foreground uppercase">
-          <BarChart3 className="h-4 w-4" /> Insights
-        </h2>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Notes This Month
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{notesThisMonth.length}</p>
-              <p className="text-xs text-muted-foreground">
-                Includes active + archived — most on{" "}
-                <span className="font-semibold">{mostActiveDay}</span>
-              </p>
-            </CardContent>
-          </Card>
+      {/* Tabs */}
+      <Tabs defaultValue="insights" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="insights" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Insights
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Notes
+          </TabsTrigger>
+        </TabsList>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{totalNotes}</p>
-              <p className="text-xs text-muted-foreground">
-                {notes.length} active, {archivedNotes.length} archived,{" "}
-                {publicCount} public
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Remaining Space
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{remaining}</p>
-              <p className="text-xs text-muted-foreground">Up to 100 notes</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Average Note Length
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {avgThisMonth > 0 ? (
-                <>
-                  <p className="text-3xl font-bold">
-                    {avgThisMonth.toLocaleString()}
-                  </p>
+        {/* Insights Tab */}
+        <TabsContent value="insights" className="mt-6">
+          <section>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Notes This Month
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{notesThisMonth.length}</p>
                   <p className="text-xs text-muted-foreground">
-                    {avgPrevMonth > 0 ? (
-                      <>
-                        Growing: {avgPrevMonth.toLocaleString()} →{" "}
-                        {avgThisMonth.toLocaleString()} words
-                      </>
-                    ) : (
-                      <>Average length this month</>
-                    )}
+                    Includes active + archived — most on{" "}
+                    <span className="font-semibold">{mostActiveDay}</span>
                   </p>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  No notes yet
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Pie chart */}
-          <Card className="sm:col-span-2 lg:col-span-3">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Notes by Category
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {categoryData.length > 0 ? (
-                <div className="w-full h-64 sm:h-72 overflow-x-auto">
-                  <div className="min-w-[300px] h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={80}
-                          paddingAngle={3}
-                          labelLine={false}
-                          label={({ name, percent }) =>
-                            `${name} ${
-                              percent !== undefined
-                                ? (percent * 100).toFixed(0)
-                                : 0
-                            }%`
-                          }
-                        >
-                          {categoryData.map((_, i) => (
-                            <Cell
-                              key={`cell-${i}`}
-                              fill={COLORS[i % COLORS.length]}
-                              stroke="#fff"
-                              strokeWidth={2}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{totalNotes}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {notes.length} active, {archivedNotes.length} archived,{" "}
+                    {publicCount} public
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Remaining Space
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{remaining}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Up to 100 notes
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Average Note Length
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {avgThisMonth > 0 ? (
+                    <>
+                      <p className="text-3xl font-bold">
+                        {avgThisMonth.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {avgPrevMonth > 0 ? (
+                          <>
+                            Growing: {avgPrevMonth.toLocaleString()} →{" "}
+                            {avgThisMonth.toLocaleString()} words
+                          </>
+                        ) : (
+                          <>Average length this month</>
+                        )}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No notes yet
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Pie chart */}
+              <Card className="sm:col-span-2 lg:col-span-3">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Notes by Category
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {categoryData.length > 0 ? (
+                    <div className="w-full h-64 sm:h-72 overflow-x-auto">
+                      <div className="min-w-[300px] h-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={categoryData}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={40}
+                              outerRadius={80}
+                              paddingAngle={3}
+                              labelLine={false}
+                              label={({ name, percent }) =>
+                                `${name} ${
+                                  percent !== undefined
+                                    ? (percent * 100).toFixed(0)
+                                    : 0
+                                }%`
+                              }
+                            >
+                              {categoryData.map((_, i) => (
+                                <Cell
+                                  key={`cell-${i}`}
+                                  fill={COLORS[i % COLORS.length]}
+                                  stroke="#fff"
+                                  strokeWidth={2}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value, name) => [
+                                `${value} notes`,
+                                name,
+                              ]}
+                              contentStyle={{
+                                borderRadius: "0.5rem",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                              }}
                             />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value, name) => [`${value} notes`, name]}
-                          contentStyle={{
-                            borderRadius: "0.5rem",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                          }}
-                        />
-                        <Legend
-                          verticalAlign="bottom"
-                          align="center"
-                          wrapperStyle={{ fontSize: "0.75rem" }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                            <Legend
+                              verticalAlign="bottom"
+                              align="center"
+                              wrapperStyle={{ fontSize: "0.75rem" }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No notes available
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {mostViewed && (
+                <Card className="sm:col-span-2 lg:col-span-3">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Most Viewed Note
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-base">
+                      <span className="font-semibold">
+                        {mostViewed.title || "Untitled"}
+                      </span>{" "}
+                      — {mostViewed.view_count ?? 0} views
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </section>
+        </TabsContent>
+
+        {/* Notes Tab */}
+        <TabsContent value="notes" className="mt-6">
+          <section>
+            <h2 className="text-sm font-medium mb-2">Recent Notes</h2>
+            <div className="space-y-1">
+              {notes.slice(0, 5).map((note) => (
+                <button
+                  key={note.id}
+                  onClick={() => onSelectNote(note.id)}
+                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left rounded-md hover:bg-accent/50 transition"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate text-sm">
+                      {note.title || "Untitled"}
+                    </span>
                   </div>
-                </div>
-              ) : (
+                  {note.category?.name && (
+                    <Badge variant="secondary" className="flex-shrink-0">
+                      {note.category.name}
+                    </Badge>
+                  )}
+                </button>
+              ))}
+              {!notes.length && (
                 <p className="text-sm text-muted-foreground italic">
-                  No notes available
+                  No notes yet. Create your first one!
                 </p>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
-          {mostViewed && (
-            <Card className="sm:col-span-2 lg:col-span-3">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Most Viewed Note
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-base">
-                  <span className="font-semibold">
-                    {mostViewed.title || "Untitled"}
-                  </span>{" "}
-                  — {mostViewed.view_count ?? 0} views
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </section>
-
-      {/* Recent notes */}
-      <section>
-        <h2 className="text-sm font-medium mb-2">Recent Notes</h2>
-        <div className="space-y-1">
-          {notes.slice(0, 5).map((note) => (
-            <button
-              key={note.id}
-              onClick={() => onSelectNote(note.id)}
-              className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left rounded-md hover:bg-accent/50 transition"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="truncate text-sm">
-                  {note.title || "Untitled"}
-                </span>
-              </div>
-              {note.category?.name && (
-                <Badge variant="secondary" className="flex-shrink-0">
-                  {note.category.name}
-                </Badge>
-              )}
-            </button>
-          ))}
-          {!notes.length && (
-            <p className="text-sm text-muted-foreground italic">
-              No notes yet. Create your first one!
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* Notes table */}
-      <div className="overflow-x-auto">
-        <NotesTable
-          notes={notes}
-          selectedIds={selectedIds}
-          setSelectedIds={setSelectedIds}
-          onSelectNote={onSelectNote}
-        />
-      </div>
+          {/* Notes table */}
+          <div className="overflow-x-auto mt-6">
+            <NotesTable
+              notes={notes}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+              onSelectNote={onSelectNote}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
