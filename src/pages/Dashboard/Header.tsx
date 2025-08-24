@@ -1,18 +1,10 @@
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Plus, Archive, Share2, Eye } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Archive, Share2, Home } from "lucide-react";
 
 type HeaderProps = {
-  onNewNote: () => void;
   onArchive: () => void;
   isArchiveDisabled: boolean;
-  isNewDisabled: boolean;
-  noteLimitReachedMessage?: string;
   showTableMode?: boolean;
   onDeselect?: () => void;
   isIndexPage?: boolean;
@@ -26,11 +18,8 @@ type HeaderProps = {
 };
 
 export default function Header({
-  onNewNote,
   onArchive,
   isArchiveDisabled,
-  isNewDisabled,
-  noteLimitReachedMessage,
   showTableMode,
   onDeselect,
   isIndexPage = false,
@@ -47,39 +36,16 @@ export default function Header({
       {/* Actions */}
       <TooltipProvider>
         <div className="flex flex-wrap justify-center sm:justify-end gap-2">
-          {/* View All Notes */}
+          {/* Home */}
           {onDeselect && !isIndexPage && (
             <Button
               variant="ghost"
               onClick={onDeselect}
               className="flex items-center gap-2"
             >
-              <Eye className="h-4 w-4" />
-              <span className="hidden sm:inline">View All</span>
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Home</span>
             </Button>
-          )}
-
-          {/* New Note */}
-          {!isIndexPage && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="default"
-                  onClick={onNewNote}
-                  disabled={isNewDisabled}
-                  aria-label="Create a new note"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">New Note</span>
-                </Button>
-              </TooltipTrigger>
-              {isNewDisabled && noteLimitReachedMessage && (
-                <TooltipContent>
-                  <span>{noteLimitReachedMessage}</span>
-                </TooltipContent>
-              )}
-            </Tooltip>
           )}
 
           {/* Archive */}

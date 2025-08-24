@@ -8,7 +8,12 @@ import inklineIcon from "@/assets/InkLine.png";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
-import { ArchiveIcon, HomeIcon, PlusCircle } from "lucide-react";
+import {
+  ArchiveIcon,
+  ArchiveRestore,
+  HomeIcon,
+  PlusCircle,
+} from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import ArchiveDialog from "./ArchiveDialog";
 import { useNavigate } from "react-router-dom";
@@ -152,7 +157,7 @@ export default function Sidebar({
             className="w-full justify-start gap-2 h-7 px-2 text-xs"
             onClick={() => setOpenArchive(true)}
           >
-            <ArchiveIcon className="h-3.5 w-3.5" /> Archive
+            <ArchiveRestore className="h-3.5 w-3.5" /> Archived Notes
           </Button>
 
           {onCreateNote && (
