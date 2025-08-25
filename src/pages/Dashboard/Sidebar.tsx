@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input"; // ✅ search bar
 import { Note } from "@/types/Notes";
 import { isToday, isYesterday } from "date-fns";
 import inklineIcon from "@/assets/InkLine.png";
@@ -50,6 +51,7 @@ export default function Sidebar({
 
   const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
   const [openArchive, setOpenArchive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // ✅ search state
   const navigate = useNavigate();
 
   // fetch archived notes once
@@ -67,19 +69,29 @@ export default function Sidebar({
     fetchArchived();
   }, []);
 
+  // filter notes by search
+  const filteredNotes = useMemo(() => {
+    if (!searchQuery.trim()) return notes;
+    return notes.filter((note) =>
+      (note.title || "Untitled")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    );
+  }, [notes, searchQuery]);
+
   // group active notes
   const { todayNotes, yesterdayNotes, olderNotes } = useMemo(() => {
     const today: Note[] = [];
     const yesterday: Note[] = [];
     const older: Note[] = [];
-    for (const note of notes) {
+    for (const note of filteredNotes) {
       const updatedAt = new Date(note.updated_at);
       if (isToday(updatedAt)) today.push(note);
       else if (isYesterday(updatedAt)) yesterday.push(note);
       else older.push(note);
     }
     return { todayNotes: today, yesterdayNotes: yesterday, olderNotes: older };
-  }, [notes]);
+  }, [filteredNotes]);
 
   const sections = useMemo(() => {
     const data = [];
@@ -173,18 +185,34 @@ export default function Sidebar({
 
         <Separator />
 
+        {/* Search bar */}
+        <div className="p-2">
+          <Input
+            placeholder="Search notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 text-xs"
+          />
+        </div>
+
         {/* Notes list */}
         <div
           ref={parentRef}
           className="flex-1 overflow-y-auto custom-scrollbar"
         >
-          {!notes.length ? (
+          {!flatList.length ? (
             <div className="flex flex-col items-center justify-center text-xs text-muted-foreground p-4">
-              <p className="mb-2">No notes yet</p>
-              {onCreateNote && (
-                <Button size="sm" onClick={onCreateNote}>
-                  Create Note
-                </Button>
+              {searchQuery ? (
+                <p>No results found</p>
+              ) : (
+                <>
+                  <p className="mb-2">No notes yet</p>
+                  {onCreateNote && (
+                    <Button size="sm" onClick={onCreateNote}>
+                      Create Note
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           ) : (
