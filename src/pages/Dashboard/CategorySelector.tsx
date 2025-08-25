@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, Plus, Trash, X } from "lucide-react";
+import { Check, Plus, Trash, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Category = {
@@ -56,6 +56,7 @@ export default function CategorySelector({
     await supabase.from("notes").update({ category_id: id }).eq("id", noteId);
     onCategoryChange(id);
     setOpen(false);
+    setSearch("");
   };
 
   const createCategory = async (name: string) => {
@@ -71,19 +72,13 @@ export default function CategorySelector({
       return;
     }
 
-    // data is the new/updated category id
     await fetchCategories();
     assignCategory(data);
-    setSearch("");
   };
 
   const deleteCategory = async (id: string) => {
     await supabase.from("categories").delete().eq("id", id);
-
-    if (categoryId === id) {
-      await assignCategory(null);
-    }
-
+    if (categoryId === id) await assignCategory(null);
     fetchCategories();
   };
 
@@ -104,93 +99,89 @@ export default function CategorySelector({
   );
 
   return (
-    <div className="mb-4 flex items-center gap-2">
-      {currentCategory ? (
-        <Badge
-          variant="secondary"
-          className="text-sm px-3 py-1 flex items-center gap-2"
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div
+          className="flex items-center gap-2 w-full sm:w-[220px] rounded-md border px-2 py-1 cursor-text"
+          onClick={() => setOpen(true)}
         >
-          {currentCategory.name}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-4 w-4 p-0"
-            onClick={() => assignCategory(null)}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </Badge>
-      ) : (
-        <Badge variant="outline" className="text-sm px-3 py-1">
-          No Category
-        </Badge>
-      )}
+          {currentCategory ? (
+            <Badge
+              variant="secondary"
+              className="flex items-center gap-1 text-xs px-2 py-0.5"
+            >
+              {currentCategory.name}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-3 w-3 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  assignCategory(null);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground text-xs">Set category…</span>
+          )}
+        </div>
+      </PopoverTrigger>
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-[200px] justify-between"
-          >
-            {currentCategory ? currentCategory.name : "Set Category"}
-            <ChevronsUpDown className="h-4 w-4 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="p-0 w-[220px]">
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="Search or create..."
-              value={search}
-              onValueChange={setSearch}
-            />
-            <CommandList>
-              <CommandEmpty>No categories found.</CommandEmpty>
-              <CommandGroup>
-                {filteredCategories.map((cat) => (
-                  <CommandItem
-                    key={cat.id}
-                    onSelect={() => assignCategory(cat.id)}
-                    className="flex justify-between items-center"
+      <PopoverContent className="p-0 w-full sm:w-[220px]">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search or create..."
+            value={search}
+            onValueChange={setSearch}
+            className="text-xs"
+          />
+          <CommandList>
+            <CommandEmpty>No categories found.</CommandEmpty>
+            <CommandGroup>
+              {filteredCategories.map((cat) => (
+                <CommandItem
+                  key={cat.id}
+                  onSelect={() => assignCategory(cat.id)}
+                  className="flex justify-between items-center text-sm"
+                >
+                  <span className="flex items-center gap-2">
+                    <Check
+                      className={cn(
+                        "h-4 w-4",
+                        cat.id === categoryId ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {cat.name}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 p-0 text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteCategory(cat.id);
+                    }}
                   >
-                    <span className="flex items-center gap-2">
-                      <Check
-                        className={cn(
-                          "h-4 w-4",
-                          cat.id === categoryId ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {cat.name}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-4 w-4 p-0 text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteCategory(cat.id);
-                      }}
-                    >
-                      <Trash className="h-3 w-3" />
-                    </Button>
-                  </CommandItem>
-                ))}
+                    <Trash className="h-3 w-3" />
+                  </Button>
+                </CommandItem>
+              ))}
 
-                {/* Create new category option if no exact match */}
-                {search.trim() && !exactMatch && (
-                  <CommandItem
-                    onSelect={() => createCategory(search.trim())}
-                    className="flex items-center gap-2 text-primary"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create “{search.trim()}”
-                  </CommandItem>
-                )}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
+              {search.trim() && !exactMatch && (
+                <CommandItem
+                  onSelect={() => createCategory(search.trim())}
+                  className="flex items-center gap-2 text-primary text-sm"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create “{search.trim()}”
+                </CommandItem>
+              )}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

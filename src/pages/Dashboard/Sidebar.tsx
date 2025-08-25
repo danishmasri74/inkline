@@ -185,8 +185,8 @@ export default function Sidebar({
 
         <Separator />
 
-        {/* Search bar */}
-        <div className="p-2">
+        {/* Search bar (hidden on mobile) */}
+        <div className="p-2 hidden md:block">
           <Input
             placeholder="Search notes..."
             value={searchQuery}
